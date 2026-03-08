@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  isSolvable,
   createGameState,
   createSolvedBoard,
   applyMove,
@@ -8,6 +9,7 @@ import {
   getMovableIndices,
   isSolved,
   moveTile,
+  solveBoard,
   shuffleBoard,
   updateHighscores,
 } from "./game.js";
@@ -101,6 +103,60 @@ describe("isSolved", () => {
     const board = createSolvedBoard(size);
     const { board: next } = moveTile(board, 14, size);
     expect(isSolved(next, size)).toBe(false);
+  });
+});
+
+describe("solveBoard", () => {
+  it("returns solved status for solved boards", () => {
+    const board = createSolvedBoard(size);
+    const result = solveBoard(board, { size });
+    expect(result.status).toBe("solved");
+    expect(result.moves).toEqual([]);
+  });
+
+  it("finds a valid deterministic solution path", () => {
+    const initial = createSolvedBoard(size);
+    const one = moveTile(initial, 14, size).board;
+    const board = moveTile(one, 10, size).board;
+
+    const first = solveBoard(board, { size, maxNodes: 20000, maxTimeMs: 2000 });
+    const second = solveBoard(board, { size, maxNodes: 20000, maxTimeMs: 2000 });
+
+    expect(first.status).toBe("found");
+    expect(first.moves).toEqual(second.moves);
+    expect(first.moves.length).toBeGreaterThan(0);
+
+    let current = board;
+    for (const moveIndex of first.moves) {
+      current = moveTile(current, moveIndex, size).board;
+    }
+    expect(isSolved(current, size)).toBe(true);
+  });
+
+  it("rejects unsolvable positions", () => {
+    const unsolvable = [
+      1, 2, 3, 4,
+      5, 6, 7, 8,
+      9, 10, 11, 12,
+      13, 15, 14, 0,
+    ];
+    expect(isSolvable(unsolvable, size)).toBe(false);
+
+    const result = solveBoard(unsolvable, { size });
+    expect(result.status).toBe("unsolvable");
+    expect(result.moves).toBeNull();
+  });
+
+  it("returns bounded status when search limits are exceeded", () => {
+    const initial = createSolvedBoard(size);
+    const board = shuffleBoard(initial, 30, size, () => 0);
+    const result = solveBoard(board, {
+      size,
+      maxNodes: 1,
+      maxTimeMs: 2000,
+    });
+    expect(result.status).toBe("bounded");
+    expect(result.moves).toBeNull();
   });
 });
 

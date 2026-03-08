@@ -24,6 +24,9 @@ export default function App() {
   const solved = isSolved(game.board, size);
   const celebrate = solved && game.moves > 0 && !isShuffling;
   const previousSolved = React.useRef(solved);
+  const tileRefs = React.useRef(new Map());
+  const previousTileRects = React.useRef(new Map());
+  const shouldAnimateTiles = React.useRef(false);
 
   function getPlayerName() {
     if (typeof window === "undefined" || typeof window.prompt !== "function") {
@@ -52,6 +55,38 @@ export default function App() {
     previousSolved.current = solved;
   }, [solved, game.moves]);
 
+  React.useLayoutEffect(() => {
+    const nextTileRects = new Map();
+    tileRefs.current.forEach((node, value) => {
+      nextTileRects.set(value, node.getBoundingClientRect());
+    });
+
+    if (shouldAnimateTiles.current && previousTileRects.current.size > 0) {
+      tileRefs.current.forEach((node, value) => {
+        const previousRect = previousTileRects.current.get(value);
+        const nextRect = nextTileRects.get(value);
+        if (!previousRect || !nextRect) {
+          return;
+        }
+
+        const deltaX = previousRect.left - nextRect.left;
+        const deltaY = previousRect.top - nextRect.top;
+        if (deltaX === 0 && deltaY === 0) {
+          return;
+        }
+
+        node.style.transition = "none";
+        node.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+        node.getBoundingClientRect();
+        node.style.transition = "transform 180ms ease";
+        node.style.transform = "";
+      });
+    }
+
+    previousTileRects.current = nextTileRects;
+    shouldAnimateTiles.current = false;
+  }, [game.board]);
+
   function handleTileClick(index) {
     if (isShuffling) {
       return;
@@ -59,6 +94,7 @@ export default function App() {
 
     const nextGame = applyMove(game, index, size);
     if (nextGame.moved) {
+      shouldAnimateTiles.current = true;
       setGame({ board: nextGame.board, moves: nextGame.moves });
     }
   }
@@ -125,6 +161,13 @@ export default function App() {
               key={value}
               className={`tile ${isMovable ? "movable" : ""}`}
               type="button"
+              ref={(node) => {
+                if (node) {
+                  tileRefs.current.set(value, node);
+                } else {
+                  tileRefs.current.delete(value);
+                }
+              }}
               onClick={() => handleTileClick(index)}
               disabled={!isMovable || isShuffling}
             >

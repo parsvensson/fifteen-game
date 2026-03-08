@@ -10,10 +10,9 @@ import {
   gameReducer,
   getMovableIndices,
   isSolved,
-  loadHighscores,
-  saveHighscores,
   updateHighscores,
 } from "./game.js";
+import { loadHighscores, saveHighscores } from "./storage.js";
 
 const defaultPlayerName = "Anonymous";
 

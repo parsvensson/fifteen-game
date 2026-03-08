@@ -15,14 +15,14 @@ describe("storage", () => {
 
     saveHighscores(
       [
-        { name: "Lin", moves: 3 },
-        { name: "Max", moves: 7 },
+        { name: "Lin", moves: 3, timeSeconds: 22 },
+        { name: "Max", moves: 7, timeSeconds: 40 },
       ],
       storage
     );
     expect(loadHighscores(storage)).toEqual([
-      { name: "Lin", moves: 3 },
-      { name: "Max", moves: 7 },
+      { name: "Lin", moves: 3, timeSeconds: 22 },
+      { name: "Max", moves: 7, timeSeconds: 40 },
     ]);
   });
 
@@ -33,8 +33,8 @@ describe("storage", () => {
     };
 
     expect(loadHighscores(storage)).toEqual([
-      { name: "Anonymous", moves: 4 },
-      { name: "Anonymous", moves: 6 },
+      { name: "Anonymous", moves: 4, timeSeconds: null },
+      { name: "Anonymous", moves: 6, timeSeconds: null },
     ]);
   });
 });

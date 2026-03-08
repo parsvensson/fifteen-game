@@ -36,7 +36,9 @@ describe("App fireworks", () => {
     fireEvent.click(tile);
     fireEvent.click(tile);
     expect(screen.getByTestId("fireworks")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: "Highscores" }));
     expect(screen.getByText("Player")).toBeInTheDocument();
+    expect(screen.getByText(/2 moves · 0:00/i)).toBeInTheDocument();
   });
 
   it("renders slide instructions", () => {
@@ -55,13 +57,13 @@ describe("App fireworks", () => {
     act(() => {
       vi.advanceTimersByTime(2000);
     });
-    expect(screen.getByText("Time: 0:02")).toBeInTheDocument();
+    expect(screen.getByLabelText("Time: 0:02")).toBeInTheDocument();
 
     fireEvent.click(tile);
     act(() => {
       vi.advanceTimersByTime(2000);
     });
-    expect(screen.getByText("Time: 0:02")).toBeInTheDocument();
+    expect(screen.getByLabelText("Time: 0:02")).toBeInTheDocument();
     vi.useRealTimers();
   });
 
@@ -74,10 +76,10 @@ describe("App fireworks", () => {
     act(() => {
       vi.advanceTimersByTime(2000);
     });
-    expect(screen.getByText("Time: 0:02")).toBeInTheDocument();
+    expect(screen.getByLabelText("Time: 0:02")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Shuffle" }));
-    expect(screen.getByText("Time: 0:00")).toBeInTheDocument();
+    expect(screen.getByLabelText("Time: 0:00")).toBeInTheDocument();
     vi.useRealTimers();
   });
 });

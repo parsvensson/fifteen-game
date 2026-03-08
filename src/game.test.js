@@ -125,15 +125,19 @@ describe("gameReducer", () => {
 describe("highscores", () => {
   it("updates high scores in ascending order", () => {
     const updated = updateHighscores(
-      [{ name: "A", moves: 50 }, { name: "B", moves: 40 }],
+      [
+        { name: "A", moves: 50, timeSeconds: 90 },
+        { name: "B", moves: 40, timeSeconds: 70 },
+      ],
       45,
+      80,
       "C",
       5
     );
     expect(updated).toEqual([
-      { name: "B", moves: 40 },
-      { name: "C", moves: 45 },
-      { name: "A", moves: 50 },
+      { name: "B", moves: 40, timeSeconds: 70 },
+      { name: "C", moves: 45, timeSeconds: 80 },
+      { name: "A", moves: 50, timeSeconds: 90 },
     ]);
   });
 
@@ -147,15 +151,16 @@ describe("highscores", () => {
         { name: "E", moves: 14 },
       ],
       9,
+      20,
       "F",
       5
     );
     expect(updated).toEqual([
-      { name: "F", moves: 9 },
-      { name: "A", moves: 10 },
-      { name: "B", moves: 11 },
-      { name: "C", moves: 12 },
-      { name: "D", moves: 13 },
+      { name: "F", moves: 9, timeSeconds: 20 },
+      { name: "A", moves: 10, timeSeconds: null },
+      { name: "B", moves: 11, timeSeconds: null },
+      { name: "C", moves: 12, timeSeconds: null },
+      { name: "D", moves: 13, timeSeconds: null },
     ]);
   });
 });

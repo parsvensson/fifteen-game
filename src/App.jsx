@@ -1,6 +1,7 @@
 import React from "react";
 import {
   BOARD_SIZE,
+  FIREWORKS_DURATION_MS,
   HIGHSCORE_LIMIT,
   SHUFFLE_DELAY_MS,
   SHUFFLE_STEPS,
@@ -14,20 +15,14 @@ import {
 } from "./game.js";
 import { loadHighscores, saveHighscores } from "./storage.js";
 import { useShuffle } from "./useShuffle.js";
+import { formatElapsed } from "./time.js";
 import { Board } from "./components/Board.jsx";
 import { FireworksLayer } from "./components/FireworksLayer.jsx";
-import { Footer } from "./components/Footer.jsx";
 import { Header } from "./components/Header.jsx";
 import { Highscores } from "./components/Highscores.jsx";
+import { ScoreStrip } from "./components/ScoreStrip.jsx";
 
 const defaultPlayerName = "Anonymous";
-
-function formatElapsed(seconds) {
-  const safeSeconds = Math.max(0, seconds);
-  const minutes = Math.floor(safeSeconds / 60);
-  const remainingSeconds = safeSeconds % 60;
-  return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
-}
 
 export default function App() {
   const [game, dispatch] = React.useReducer(
@@ -36,6 +31,7 @@ export default function App() {
     createGameState
   );
   const [highscores, setHighscores] = React.useState(() => loadHighscores());
+  const [activeScreen, setActiveScreen] = React.useState("game");
   const [elapsedSeconds, setElapsedSeconds] = React.useState(0);
   const movable = getMovableIndices(game.board, BOARD_SIZE);
   const solved = isSolved(game.board, BOARD_SIZE);
@@ -71,14 +67,20 @@ export default function App() {
     if (solved && !previousSolved.current && game.moves > 0) {
       const name = getPlayerName();
       setHighscores((prev) => {
-        const updated = updateHighscores(prev, game.moves, name, HIGHSCORE_LIMIT);
+        const updated = updateHighscores(
+          prev,
+          game.moves,
+          elapsedSeconds,
+          name,
+          HIGHSCORE_LIMIT
+        );
         saveHighscores(updated);
         return updated;
       });
     }
 
     previousSolved.current = solved;
-  }, [solved, game.moves]);
+  }, [elapsedSeconds, solved, game.moves]);
 
   React.useEffect(() => {
     if (!timerRunning) {
@@ -149,7 +151,7 @@ export default function App() {
       fireworks.start();
       stopTimer = setTimeout(() => {
         fireworks?.stop();
-      }, 1600);
+      }, FIREWORKS_DURATION_MS);
     }
 
     startCelebration();
@@ -196,21 +198,32 @@ export default function App() {
       <Header
         solved={solved}
         isShuffling={game.isShuffling}
+        activeScreen={activeScreen}
+        onShowGame={() => setActiveScreen("game")}
+        onShowHighscores={() => setActiveScreen("highscores")}
         onShuffle={handleShuffle}
       />
-      <Board
-        board={game.board}
-        movable={movable}
-        isShuffling={game.isShuffling}
-        onTileClick={handleTileClick}
-        setTileRef={setTileRef}
-      />
-      <FireworksLayer
-        celebrate={celebrate}
-        fireworksContainerRef={fireworksContainerRef}
-      />
-      <Footer moves={game.moves} elapsed={formatElapsed(elapsedSeconds)} />
-      <Highscores highscores={highscores} />
+      {activeScreen === "game" ? (
+        <section className="game-screen">
+          <ScoreStrip moves={game.moves} elapsed={formatElapsed(elapsedSeconds)} />
+          <p className="instructions">
+            Click a tile next to the empty space to slide it.
+          </p>
+          <Board
+            board={game.board}
+            movable={movable}
+            isShuffling={game.isShuffling}
+            onTileClick={handleTileClick}
+            setTileRef={setTileRef}
+          />
+          <FireworksLayer
+            celebrate={celebrate}
+            fireworksContainerRef={fireworksContainerRef}
+          />
+        </section>
+      ) : (
+        <Highscores highscores={highscores} />
+      )}
     </div>
   );
 }

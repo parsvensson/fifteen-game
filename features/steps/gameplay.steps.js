@@ -26,18 +26,22 @@ When("I click shuffle", async ({ page }) => {
 });
 
 Then("move count should be {int}", async ({ page }, moves) => {
-  await expect(page.getByText(`Moves: ${moves}`)).toBeVisible();
+  await expect(page.locator(`[aria-label="Moves: ${moves}"]`)).toBeVisible();
 });
 
 Then("timer should be {word}", async ({ page }, timer) => {
-  await expect(page.getByText(`Time: ${timer}`)).toBeVisible();
+  await expect(page.locator(`[aria-label="Time: ${timer}"]`)).toBeVisible();
 });
 
 Then("timer should advance from 0:00", async ({ page }) => {
-  await expect(page.getByText("Time: 0:00")).toBeVisible();
+  await expect(page.locator('[aria-label="Time: 0:00"]')).toBeVisible();
   await expect.poll(async () => {
-    const text = await page.getByText(/^Time:/).first().innerText();
-    return text !== "Time: 0:00";
+    const text = await page
+      .locator(".score-strip__cell")
+      .nth(1)
+      .locator(".score-strip__value")
+      .innerText();
+    return text !== "0:00";
   }).toBeTruthy();
 });
 
@@ -56,6 +60,7 @@ Then("I should see fireworks", async ({ page }) => {
 Then(
   "I should see highscore {string} with {int} moves",
   async ({ page }, name, moves) => {
+    await page.getByRole("tab", { name: "Highscores" }).click();
     await expect(page.getByText(name)).toBeVisible();
     await expect(page.getByText(`${moves} moves`)).toBeVisible();
   }

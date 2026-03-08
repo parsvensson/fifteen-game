@@ -143,7 +143,7 @@ function normalizePlayerName(name) {
 
 function normalizeScoreEntry(entry) {
   if (typeof entry === "number" && Number.isFinite(entry)) {
-    return { name: "Anonymous", moves: entry };
+    return { name: "Anonymous", moves: entry, timeSeconds: null };
   }
 
   if (
@@ -151,7 +151,8 @@ function normalizeScoreEntry(entry) {
     typeof entry === "object" &&
     Number.isFinite(entry.moves)
   ) {
-    return { name: normalizePlayerName(entry.name), moves: entry.moves };
+    const timeSeconds = Number.isFinite(entry.timeSeconds) ? entry.timeSeconds : null;
+    return { name: normalizePlayerName(entry.name), moves: entry.moves, timeSeconds };
   }
 
   return null;
@@ -160,16 +161,27 @@ function normalizeScoreEntry(entry) {
 export function updateHighscores(
   scores,
   moves,
+  timeSeconds,
   name = "Anonymous",
   limit = HIGHSCORE_LIMIT
 ) {
   const next = [
     ...scores.map(normalizeScoreEntry).filter(Boolean),
-    { name: normalizePlayerName(name), moves },
+    {
+      name: normalizePlayerName(name),
+      moves,
+      timeSeconds: Number.isFinite(timeSeconds) ? timeSeconds : null,
+    },
   ];
 
   return next
-    .sort((a, b) => a.moves - b.moves || a.name.localeCompare(b.name))
+    .sort(
+      (a, b) =>
+        a.moves - b.moves ||
+        (a.timeSeconds ?? Number.MAX_SAFE_INTEGER) -
+          (b.timeSeconds ?? Number.MAX_SAFE_INTEGER) ||
+        a.name.localeCompare(b.name)
+    )
     .slice(0, limit);
 }
 

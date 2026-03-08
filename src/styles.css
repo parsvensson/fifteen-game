@@ -116,7 +116,8 @@ h1 {
 }
 
 .tile {
-  border: none;
+  appearance: none;
+  border: 2px solid #e1d2bd;
   background: #ffffff;
   border-radius: 16px;
   font-size: 1.4rem;
@@ -129,7 +130,14 @@ h1 {
 }
 
 .tile.movable {
-  outline: 2px solid rgba(175, 107, 63, 0.35);
+  border-color: #e1d2bd;
+}
+
+.tile:focus,
+.tile:focus-visible,
+.tile:active {
+  outline: none;
+  border-color: #e1d2bd;
 }
 
 .tile:disabled {

@@ -25,7 +25,7 @@ import { Highscores } from "./components/Highscores.jsx";
 import { ScoreStrip } from "./components/ScoreStrip.jsx";
 
 const defaultPlayerName = "Anonymous";
-const SOLVE_PROMPT_DELAY_MS = TILE_SLIDE_DURATION_MS + 30;
+const SOLVE_PROMPT_DELAY_MS = 900;
 const AUTOSOLVE_STEP_DELAY_MS = TILE_SLIDE_DURATION_MS + 20;
 
 export default function App() {
@@ -38,6 +38,8 @@ export default function App() {
   const [activeScreen, setActiveScreen] = React.useState("game");
   const [elapsedSeconds, setElapsedSeconds] = React.useState(0);
   const [autosolveStatus, setAutosolveStatus] = React.useState("idle");
+  const [pendingSolve, setPendingSolve] = React.useState(null);
+  const [celebrationStartedAt, setCelebrationStartedAt] = React.useState(null);
   const movable = getMovableIndices(game.board, BOARD_SIZE);
   const solved = isSolved(game.board, BOARD_SIZE);
   const isAutosolving = autosolveStatus === "running";
@@ -101,13 +103,29 @@ export default function App() {
       return undefined;
     }
 
+    setCelebrationStartedAt(null);
+    setPendingSolve({
+      moves: game.moves,
+      elapsed: elapsedSeconds,
+      solvedAt: Date.now(),
+    });
+    previousSolved.current = solved;
+  }, [elapsedSeconds, solved, game.moves]);
+
+  React.useEffect(() => {
+    if (!pendingSolve) {
+      return undefined;
+    }
+
+    const baseTime = celebrationStartedAt ?? pendingSolve.solvedAt;
+    const waitMs = Math.max(0, baseTime + SOLVE_PROMPT_DELAY_MS - Date.now());
     const timerId = setTimeout(() => {
       const name = getPlayerName();
       setHighscores((prev) => {
         const updated = updateHighscores(
           prev,
-          game.moves,
-          elapsedSeconds,
+          pendingSolve.moves,
+          pendingSolve.elapsed,
           name,
           HIGHSCORE_LIMIT,
           new Date().toISOString()
@@ -115,11 +133,12 @@ export default function App() {
         saveHighscores(updated);
         return updated;
       });
-    }, SOLVE_PROMPT_DELAY_MS);
+      setPendingSolve(null);
+      setCelebrationStartedAt(null);
+    }, waitMs);
 
-    previousSolved.current = solved;
     return () => clearTimeout(timerId);
-  }, [elapsedSeconds, solved, game.moves]);
+  }, [celebrationStartedAt, pendingSolve]);
 
   React.useEffect(() => {
     if (!timerRunning) {
@@ -175,22 +194,29 @@ export default function App() {
     let fireworks = null;
 
     async function startCelebration() {
-      const { Fireworks } = await import("fireworks-js");
-      if (disposed || !fireworksContainerRef.current) {
-        return;
-      }
+      try {
+        const { Fireworks } = await import("fireworks-js");
+        if (disposed || !fireworksContainerRef.current) {
+          return;
+        }
 
-      fireworks = new Fireworks(fireworksContainerRef.current, {
-        autoresize: true,
-        opacity: 0.5,
-        acceleration: 1.02,
-        particles: 45,
-        traceLength: 2,
-      });
-      fireworks.start();
-      stopTimer = setTimeout(() => {
-        fireworks?.stop();
-      }, FIREWORKS_DURATION_MS);
+        fireworks = new Fireworks(fireworksContainerRef.current, {
+          autoresize: true,
+          opacity: 0.5,
+          acceleration: 1.02,
+          particles: 45,
+          traceLength: 2,
+        });
+        fireworks.start();
+        setCelebrationStartedAt(Date.now());
+        stopTimer = setTimeout(() => {
+          fireworks?.stop();
+        }, FIREWORKS_DURATION_MS);
+      } catch {
+        if (!disposed) {
+          setCelebrationStartedAt(Date.now());
+        }
+      }
     }
 
     startCelebration();
@@ -236,6 +262,8 @@ export default function App() {
       setAutosolveStatus("idle");
     }
 
+    setPendingSolve(null);
+    setCelebrationStartedAt(null);
     setElapsedSeconds(0);
     await runShuffle();
   }

@@ -40,7 +40,7 @@ describe("App fireworks", () => {
     fireEvent.click(tile);
     fireEvent.click(tile);
     act(() => {
-      vi.advanceTimersByTime(300);
+      vi.advanceTimersByTime(1300);
     });
     expect(screen.getByTestId("fireworks")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("tab", { name: "Highscores" }));
@@ -56,7 +56,7 @@ describe("App fireworks", () => {
     fireEvent.click(tile);
     fireEvent.click(tile);
     act(() => {
-      vi.advanceTimersByTime(300);
+      vi.advanceTimersByTime(1300);
     });
     fireEvent.click(screen.getByRole("tab", { name: "Highscores" }));
     expect(screen.getByText("Player")).toBeInTheDocument();

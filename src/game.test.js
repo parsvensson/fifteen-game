@@ -1,18 +1,26 @@
 import { describe, expect, it } from "vitest";
 import {
+  DEFAULT_SOLVER_ID,
   isSolvable,
   createGameState,
   createSolvedBoard,
   applyMove,
   findEmptyIndex,
+  GAME_LIFECYCLE,
+  GAME_EVENT_TYPES,
   gameReducer,
   getMovableIndices,
   isSolved,
   moveTile,
   solveBoard,
   shuffleBoard,
+  solveWithPlugin,
   updateHighscores,
 } from "./game.js";
+import {
+  createSeededBoard,
+  getBenchmarkBoards,
+} from "./domain/fixtures/boardFixtures.js";
 
 const size = 4;
 
@@ -148,8 +156,7 @@ describe("solveBoard", () => {
   });
 
   it("returns bounded status when search limits are exceeded", () => {
-    const initial = createSolvedBoard(size);
-    const board = shuffleBoard(initial, 30, size, () => 0);
+    const board = createSeededBoard({ seed: 42, steps: 30, size });
     const result = solveBoard(board, {
       size,
       maxNodes: 1,
@@ -157,6 +164,24 @@ describe("solveBoard", () => {
     });
     expect(result.status).toBe("bounded");
     expect(result.moves).toBeNull();
+  });
+});
+
+describe("solver plugins", () => {
+  it("solves through the default solver plugin contract", async () => {
+    const board = getBenchmarkBoards().find((entry) => entry.id === "b001_near_solved_1").board;
+    const result = await solveWithPlugin(
+      {
+        board,
+        size,
+        limits: { maxNodes: 100000, maxTimeMs: 1500 },
+      },
+      { solverId: DEFAULT_SOLVER_ID }
+    );
+    expect(result.status).toBe("found");
+    expect(result.moves).toEqual([15]);
+    expect(result.telemetry.algorithmId).toBe(DEFAULT_SOLVER_ID);
+    expect(result.telemetry.deterministic).toBe(true);
   });
 });
 
@@ -173,8 +198,73 @@ describe("gameReducer", () => {
     const state = createGameState(size);
     const started = gameReducer(state, { type: "SHUFFLE_START" });
     expect(started.isShuffling).toBe(true);
+    expect(started.lifecycle).toBe(GAME_LIFECYCLE.SHUFFLING);
     const ended = gameReducer(started, { type: "SHUFFLE_END" });
     expect(ended.isShuffling).toBe(false);
+    expect(ended.lifecycle).toBe(GAME_LIFECYCLE.IDLE);
+  });
+
+  it("tracks explicit lifecycle transitions", () => {
+    const initial = createGameState(size);
+    expect(initial.lifecycle).toBe(GAME_LIFECYCLE.IDLE);
+
+    const moved = gameReducer(initial, { type: "MOVE_TILE", index: 14, size });
+    expect(moved.lifecycle).toBe(GAME_LIFECYCLE.PLAYING);
+
+    const autosolving = gameReducer(moved, { type: "AUTOSOLVE_START" });
+    expect(autosolving.lifecycle).toBe(GAME_LIFECYCLE.AUTOSOLVING);
+
+    const solved = gameReducer(autosolving, { type: "BOARD_SOLVED" });
+    expect(solved.lifecycle).toBe(GAME_LIFECYCLE.SOLVED);
+
+    const naming = gameReducer(solved, { type: "NAME_CAPTURE_START" });
+    expect(naming.lifecycle).toBe(GAME_LIFECYCLE.NAME_CAPTURE);
+
+    const closed = gameReducer(naming, { type: "NAME_CAPTURE_END" });
+    expect(closed.lifecycle).toBe(GAME_LIFECYCLE.IDLE);
+  });
+
+  it("emits move, solve, and score-save events", () => {
+    const initial = createGameState(size);
+    const moved = gameReducer(initial, {
+      type: "MOVE_TILE",
+      index: 14,
+      size,
+      source: "player",
+    });
+    expect(moved.events.at(-1).type).toBe(GAME_EVENT_TYPES.MOVE_APPLIED);
+
+    const started = gameReducer(moved, {
+      type: "AUTOSOLVE_START",
+      solverId: "optimal-astar",
+      limits: { maxNodes: 100000, maxTimeMs: 1500 },
+    });
+    expect(started.events.at(-1).type).toBe(GAME_EVENT_TYPES.SOLVE_STARTED);
+
+    const solveStep = gameReducer(started, {
+      type: "MOVE_TILE",
+      index: 15,
+      size,
+      source: "solve",
+      step: 1,
+    });
+    expect(solveStep.events.at(-1).type).toBe(GAME_EVENT_TYPES.SOLVE_STEP_APPLIED);
+
+    const stopped = gameReducer(solveStep, {
+      type: "AUTOSOLVE_STOP",
+      solverId: "optimal-astar",
+      status: "found",
+      elapsedMs: 12,
+    });
+    expect(stopped.events.at(-1).type).toBe(GAME_EVENT_TYPES.SOLVE_COMPLETED);
+
+    const scored = gameReducer(stopped, {
+      type: "SCORE_SAVED",
+      name: "A",
+      moves: 2,
+      timeSeconds: 1,
+    });
+    expect(scored.events.at(-1).type).toBe(GAME_EVENT_TYPES.SCORE_SAVED);
   });
 });
 

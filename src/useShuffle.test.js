@@ -16,8 +16,8 @@ describe("useShuffle", () => {
       await run;
     });
 
-    expect(dispatch).toHaveBeenNthCalledWith(1, { type: "SHUFFLE_START" });
-    expect(dispatch).toHaveBeenCalledWith({ type: "SHUFFLE_STEP", size: 4 });
+    expect(dispatch).toHaveBeenNthCalledWith(1, { type: "SHUFFLE_START", steps: 3 });
+    expect(dispatch).toHaveBeenCalledWith({ type: "SHUFFLE_STEP", size: 4, step: 1 });
     expect(dispatch).toHaveBeenLastCalledWith({ type: "SHUFFLE_END" });
     expect(
       dispatch.mock.calls.filter(([action]) => action.type === "SHUFFLE_STEP")

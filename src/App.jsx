@@ -9,12 +9,14 @@ import {
 } from "./config.js";
 import {
   createGameState,
+  DEFAULT_SOLVER_ID,
+  GAME_LIFECYCLE,
   gameReducer,
   getMovableIndices,
   isSolved,
-  solveBoard,
+  solveWithPlugin,
   updateHighscores,
-} from "./game.js";
+} from "./ui/reactGameAdapter.js";
 import { loadHighscores, saveHighscores } from "./storage.js";
 import { useShuffle } from "./useShuffle.js";
 import { formatElapsed } from "./time.js";
@@ -44,10 +46,13 @@ export default function App() {
   const [nameInput, setNameInput] = React.useState("");
   const [celebrationStartedAt, setCelebrationStartedAt] = React.useState(null);
   const movable = getMovableIndices(game.board, BOARD_SIZE);
+  const lifecycle = game.lifecycle ?? GAME_LIFECYCLE.IDLE;
   const solved = isSolved(game.board, BOARD_SIZE);
-  const isAutosolving = autosolveStatus === "running";
-  const celebrate = solved && game.moves > 0 && !game.isShuffling;
-  const timerRunning = game.moves > 0 && !solved && !game.isShuffling;
+  const isAutosolving = lifecycle === GAME_LIFECYCLE.AUTOSOLVING;
+  const isShuffling = lifecycle === GAME_LIFECYCLE.SHUFFLING;
+  const isNameCapture = lifecycle === GAME_LIFECYCLE.NAME_CAPTURE;
+  const celebrate = solved && game.moves > 0 && !isShuffling;
+  const timerRunning = lifecycle === GAME_LIFECYCLE.PLAYING && game.moves > 0 && !solved;
   const previousSolved = React.useRef(solved);
   const tileRefs = React.useRef(new Map());
   const previousTileRects = React.useRef(new Map());
@@ -113,6 +118,7 @@ export default function App() {
       return undefined;
     }
 
+    dispatch({ type: "BOARD_SOLVED" });
     setCelebrationStartedAt(null);
     setPendingSolve({
       moves: game.moves,
@@ -130,6 +136,7 @@ export default function App() {
     const baseTime = celebrationStartedAt ?? pendingSolve.solvedAt;
     const waitMs = Math.max(0, baseTime + SOLVE_PROMPT_DELAY_MS - Date.now());
     const timerId = setTimeout(() => {
+      dispatch({ type: "NAME_CAPTURE_START" });
       setNamePromptSolve(pendingSolve);
       setNameInput("");
       setPendingSolve(null);
@@ -231,12 +238,18 @@ export default function App() {
   React.useEffect(() => {
     if (activeScreen !== "game" && isAutosolving) {
       cancelAutosolve();
+      dispatch({
+        type: "AUTOSOLVE_STOP",
+        nextLifecycle: GAME_LIFECYCLE.PLAYING,
+        solverId: DEFAULT_SOLVER_ID,
+        status: "cancelled",
+      });
       setAutosolveStatus("idle");
     }
-  }, [activeScreen, isAutosolving, cancelAutosolve]);
+  }, [activeScreen, isAutosolving, cancelAutosolve, dispatch]);
 
   function handleTileClick(index) {
-    if (game.isShuffling || isAutosolving) {
+    if (isShuffling || isAutosolving || isNameCapture) {
       return;
     }
 
@@ -245,16 +258,22 @@ export default function App() {
     }
 
     shouldAnimateTiles.current = true;
-    dispatch({ type: "MOVE_TILE", index, size: BOARD_SIZE });
+    dispatch({ type: "MOVE_TILE", index, size: BOARD_SIZE, source: "player" });
   }
 
   async function handleShuffle() {
-    if (game.isShuffling) {
+    if (isShuffling) {
       return;
     }
 
     if (isAutosolving) {
       cancelAutosolve();
+      dispatch({
+        type: "AUTOSOLVE_STOP",
+        nextLifecycle: GAME_LIFECYCLE.PLAYING,
+        solverId: DEFAULT_SOLVER_ID,
+        status: "cancelled",
+      });
     }
 
     if (autosolveStatus !== "idle") {
@@ -271,23 +290,42 @@ export default function App() {
 
   function handleNameSubmit() {
     saveSolvedScore(namePromptSolve, nameInput);
+    dispatch({
+      type: "SCORE_SAVED",
+      name: (nameInput || defaultPlayerName).trim() || defaultPlayerName,
+      moves: namePromptSolve?.moves ?? null,
+      timeSeconds: namePromptSolve?.elapsed ?? null,
+    });
+    dispatch({ type: "NAME_CAPTURE_END" });
     setNamePromptSolve(null);
     setNameInput("");
   }
 
   function handleNameCancel() {
     saveSolvedScore(namePromptSolve, defaultPlayerName);
+    dispatch({
+      type: "SCORE_SAVED",
+      name: defaultPlayerName,
+      moves: namePromptSolve?.moves ?? null,
+      timeSeconds: namePromptSolve?.elapsed ?? null,
+    });
+    dispatch({ type: "NAME_CAPTURE_END" });
     setNamePromptSolve(null);
     setNameInput("");
   }
 
   function handleRobotSolve() {
-    if (game.isShuffling || isAutosolving || activeScreen !== "game") {
+    if (isShuffling || isAutosolving || isNameCapture || activeScreen !== "game") {
       return;
     }
 
     cancelAutosolve();
     const token = autosolveRunRef.current.token;
+    dispatch({
+      type: "AUTOSOLVE_START",
+      solverId: DEFAULT_SOLVER_ID,
+      limits: { maxNodes: 100000, maxTimeMs: 1500 },
+    });
     setAutosolveStatus("running");
 
     setTimeout(async () => {
@@ -295,28 +333,59 @@ export default function App() {
         return;
       }
 
-      const result = solveBoard(game.board, { size: BOARD_SIZE });
+      const result = solveWithPlugin(
+        {
+          board: game.board,
+          size: BOARD_SIZE,
+          limits: {
+            maxNodes: 100000,
+            maxTimeMs: 1500,
+          },
+        },
+        { solverId: DEFAULT_SOLVER_ID }
+      );
       if (autosolveRunRef.current.token !== token) {
         return;
       }
 
       if (result.status === "solved") {
+        dispatch({
+          type: "AUTOSOLVE_STOP",
+          nextLifecycle: GAME_LIFECYCLE.SOLVED,
+          solverId: DEFAULT_SOLVER_ID,
+          status: result.status,
+          elapsedMs: result.elapsedMs,
+        });
         setAutosolveStatus("done");
         return;
       }
 
       if (result.status !== "found" || !result.moves || result.moves.length === 0) {
+        dispatch({
+          type: "AUTOSOLVE_STOP",
+          nextLifecycle: GAME_LIFECYCLE.PLAYING,
+          solverId: DEFAULT_SOLVER_ID,
+          status: result.status,
+          elapsedMs: result.elapsedMs,
+        });
         setAutosolveStatus("error");
         return;
       }
 
-      for (const moveIndex of result.moves) {
+      for (let step = 0; step < result.moves.length; step += 1) {
+        const moveIndex = result.moves[step];
         if (autosolveRunRef.current.token !== token) {
           return;
         }
 
         shouldAnimateTiles.current = true;
-        dispatch({ type: "MOVE_TILE", index: moveIndex, size: BOARD_SIZE });
+        dispatch({
+          type: "MOVE_TILE",
+          index: moveIndex,
+          size: BOARD_SIZE,
+          source: "solve",
+          step: step + 1,
+        });
         const stillCurrent = await waitForAutosolveStep(token);
         if (!stillCurrent) {
           return;
@@ -327,6 +396,13 @@ export default function App() {
         return;
       }
 
+      dispatch({
+        type: "AUTOSOLVE_STOP",
+        nextLifecycle: GAME_LIFECYCLE.SOLVED,
+        solverId: DEFAULT_SOLVER_ID,
+        status: result.status,
+        elapsedMs: result.elapsedMs,
+      });
       setAutosolveStatus("done");
     }, 0);
   }
@@ -358,7 +434,7 @@ export default function App() {
     <div className="app">
       <Header
         solved={solved}
-        isShuffling={game.isShuffling}
+        isShuffling={isShuffling}
         isAutosolving={isAutosolving}
         autosolveStatus={autosolveStatus}
         activeScreen={activeScreen}
@@ -376,7 +452,7 @@ export default function App() {
           <Board
             board={game.board}
             movable={movable}
-            isShuffling={game.isShuffling}
+            isShuffling={isShuffling}
             isAutosolving={isAutosolving}
             onTileClick={handleTileClick}
             setTileRef={setTileRef}

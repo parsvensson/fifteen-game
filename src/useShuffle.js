@@ -44,13 +44,13 @@ export function useShuffle({ dispatch, size, steps, delayMs }) {
 
     isCancelled.current = false;
     isRunning.current = true;
-    dispatch({ type: "SHUFFLE_START" });
+    dispatch({ type: "SHUFFLE_START", steps });
 
     for (let step = 0; step < steps; step += 1) {
       if (isCancelled.current) {
         break;
       }
-      dispatch({ type: "SHUFFLE_STEP", size });
+      dispatch({ type: "SHUFFLE_STEP", size, step: step + 1 });
       await waitDelay();
     }
 

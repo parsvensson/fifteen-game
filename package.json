@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest",
+    "benchmark:solvers": "node scripts/benchmark-solvers.mjs",
     "bdd:gen": "bddgen",
     "test:bdd": "npm run bdd:gen && vite build --base ./ && playwright test"
   },

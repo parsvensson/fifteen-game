@@ -1,5 +1,6 @@
 import { expect } from "@playwright/test";
 import { createBdd } from "playwright-bdd";
+import { ROBOT_SOLVE_SEQUENCE } from "../../src/domain/fixtures/boardFixtures.js";
 
 const { Given, When, Then } = createBdd();
 
@@ -12,16 +13,18 @@ When("I slide tile {string}", async ({ page }, tileValue) => {
 });
 
 When("I solve from the initial board with name {string}", async ({ page }, name) => {
-  await page.getByRole("button", { name: "15" }).click();
-  await page.getByRole("button", { name: "15" }).click();
+  for (const move of ROBOT_SOLVE_SEQUENCE) {
+    await page.getByRole("button", { name: String(move) }).click();
+  }
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.getByLabel("Name").fill(name);
   await page.getByRole("button", { name: "Save score" }).click();
 });
 
 When("I solve from the initial board and skip name", async ({ page }) => {
-  await page.getByRole("button", { name: "15" }).click();
-  await page.getByRole("button", { name: "15" }).click();
+  for (const move of ROBOT_SOLVE_SEQUENCE) {
+    await page.getByRole("button", { name: String(move) }).click();
+  }
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.getByRole("button", { name: "Skip" }).click();
 });

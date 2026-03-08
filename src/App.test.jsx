@@ -3,6 +3,14 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App.jsx";
 
+vi.mock("fireworks-js", () => ({
+  Fireworks: class {
+    start() {}
+    stop() {}
+    clear() {}
+  },
+}));
+
 describe("App fireworks", () => {
   const originalPrompt = window.prompt;
 

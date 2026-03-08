@@ -22,6 +22,7 @@ export default function App() {
   const tileRefs = React.useRef(new Map());
   const previousTileRects = React.useRef(new Map());
   const shouldAnimateTiles = React.useRef(false);
+  const fireworksContainerRef = React.useRef(null);
 
   function getPlayerName() {
     if (typeof window === "undefined" || typeof window.prompt !== "function") {
@@ -81,6 +82,44 @@ export default function App() {
     previousTileRects.current = nextTileRects;
     shouldAnimateTiles.current = false;
   }, [game.board]);
+
+  React.useEffect(() => {
+    if (!celebrate || !fireworksContainerRef.current) {
+      return undefined;
+    }
+
+    let disposed = false;
+    let stopTimer;
+    let fireworks = null;
+
+    async function startCelebration() {
+      const { Fireworks } = await import("fireworks-js");
+      if (disposed || !fireworksContainerRef.current) {
+        return;
+      }
+
+      fireworks = new Fireworks(fireworksContainerRef.current, {
+        autoresize: true,
+        opacity: 0.5,
+        acceleration: 1.02,
+        particles: 45,
+        traceLength: 2,
+      });
+      fireworks.start();
+      stopTimer = setTimeout(() => {
+        fireworks?.stop();
+      }, 1600);
+    }
+
+    startCelebration();
+
+    return () => {
+      disposed = true;
+      clearTimeout(stopTimer);
+      fireworks?.stop();
+      fireworks?.clear();
+    };
+  }, [celebrate]);
 
   function handleTileClick(index) {
     if (game.isShuffling) {
@@ -168,11 +207,12 @@ export default function App() {
       </main>
 
       {celebrate ? (
-        <div className="fireworks" data-testid="fireworks" aria-hidden="true">
-          {Array.from({ length: 6 }, (_, index) => (
-            <span key={`burst-${index}`} className="burst" />
-          ))}
-        </div>
+        <div
+          ref={fireworksContainerRef}
+          className="fireworks"
+          data-testid="fireworks"
+          aria-hidden="true"
+        />
       ) : null}
 
       <footer className="footer">

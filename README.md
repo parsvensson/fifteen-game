@@ -1,12 +1,26 @@
 # Fifteen
 
-Frontend-only React SPA scaffold for a classic 15 puzzle game.
+Fifteen is a browser-based version of the classic 15-puzzle.  
+The goal is to slide numbered tiles into ascending order by moving tiles into the single empty space.
 
-## Getting started
+## Gameplay Screenshot
+
+![Fifteen puzzle gameplay](docs/images/gameplay.png)
+
+## Features
+
+- 4x4 sliding puzzle board
+- Move counter and elapsed timer
+- Shuffle that keeps the puzzle solvable
+- Win detection with celebration fireworks
+- Highscore list saved in browser local storage
+- Built-in robot solver for auto-solving
+
+## Getting Started
 
 ```bash
 npm install
-npm run dev
+npm run dev -- --host 0.0.0.0 --port 5173
 ```
 
 ## Build
@@ -20,4 +34,5 @@ npm run preview
 
 ```bash
 npm test -- --run
+npm run test:bdd
 ```

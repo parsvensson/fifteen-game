@@ -1,20 +1,22 @@
 import { defineConfig } from "@playwright/test";
 import { defineBddConfig } from "playwright-bdd";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 const testDir = defineBddConfig({
   features: "features/**/*.feature",
   steps: "features/steps/**/*.js",
 });
 
+const distBaseUrl = pathToFileURL(path.resolve("dist") + path.sep).href;
+
 export default defineConfig({
   testDir,
   reporter: "list",
   use: {
-    baseURL: "http://127.0.0.1:4173",
-  },
-  webServer: {
-    command: "npm run dev -- --host 127.0.0.1 --port 4173",
-    port: 4173,
-    reuseExistingServer: !process.env.CI,
+    baseURL: distBaseUrl,
+    launchOptions: {
+      args: ["--allow-file-access-from-files"],
+    },
   },
 });

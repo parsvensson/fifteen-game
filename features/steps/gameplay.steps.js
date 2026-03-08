@@ -4,7 +4,7 @@ import { createBdd } from "playwright-bdd";
 const { Given, When, Then } = createBdd();
 
 Given("I open the game", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("./index.html");
 });
 
 When("I slide tile {string}", async ({ page }, tileValue) => {

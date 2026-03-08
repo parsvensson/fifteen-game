@@ -16,6 +16,13 @@ The goal is to slide numbered tiles into ascending order by moving tiles into th
 - Highscore list saved in browser local storage
 - Built-in robot solver for auto-solving
 
+## Architecture and Planning Docs
+
+- [Solver plugin runway architecture](docs/solver-plugin-architecture.md)
+- [Solver acceptance criteria](docs/solver-acceptance-criteria.md)
+- [Benchmark corpus and scoring rubric](docs/benchmark-corpus-rubric.md)
+- [Domain migration plan](docs/domain-migration-plan.md)
+
 ## Getting Started
 
 ```bash

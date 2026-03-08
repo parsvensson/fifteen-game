@@ -1,0 +1,72 @@
+{
+  "version": "v1",
+  "size": 4,
+  "notes": "All boards are solvable and represented row-major with 0 as the empty tile.",
+  "boards": [
+    {
+      "id": "b001_near_solved_1",
+      "board": [1,2,3,4,5,6,7,8,9,10,11,12,13,14,0,15],
+      "difficulty": "easy",
+      "expectedOptimalMoves": 1
+    },
+    {
+      "id": "b002_near_solved_2",
+      "board": [1,2,3,4,5,6,7,8,9,10,0,12,13,14,11,15],
+      "difficulty": "easy",
+      "expectedOptimalMoves": 2
+    },
+    {
+      "id": "b003_near_solved_3",
+      "board": [1,2,3,4,5,6,7,8,9,0,10,12,13,14,11,15],
+      "difficulty": "easy",
+      "expectedOptimalMoves": 3
+    },
+    {
+      "id": "b004_short_path_4",
+      "board": [1,2,3,4,5,6,7,8,9,14,10,11,13,0,15,12],
+      "difficulty": "easy",
+      "expectedOptimalMoves": 4
+    },
+    {
+      "id": "b005_short_path_5",
+      "board": [1,2,3,4,5,6,7,8,13,9,11,12,0,10,14,15],
+      "difficulty": "medium",
+      "expectedOptimalMoves": 5
+    },
+    {
+      "id": "b006_mid_1",
+      "board": [1,2,3,4,5,6,7,8,9,14,10,12,13,11,0,15],
+      "difficulty": "medium"
+    },
+    {
+      "id": "b007_mid_2",
+      "board": [1,6,2,3,5,10,7,4,9,0,11,8,13,14,15,12],
+      "difficulty": "medium"
+    },
+    {
+      "id": "b008_mid_3",
+      "board": [1,2,3,4,5,6,7,8,9,10,15,11,13,14,0,12],
+      "difficulty": "medium"
+    },
+    {
+      "id": "b009_hard_1",
+      "board": [5,1,3,4,2,6,7,8,9,10,11,12,13,14,15,0],
+      "difficulty": "hard"
+    },
+    {
+      "id": "b010_hard_2",
+      "board": [2,3,4,8,1,6,7,0,5,9,10,12,13,14,11,15],
+      "difficulty": "hard"
+    },
+    {
+      "id": "b011_hard_3",
+      "board": [2,3,4,8,1,6,7,12,5,10,11,15,9,13,14,0],
+      "difficulty": "hard"
+    },
+    {
+      "id": "b012_hard_4",
+      "board": [6,13,7,10,8,9,11,0,15,2,12,5,14,3,1,4],
+      "difficulty": "hard"
+    }
+  ]
+}

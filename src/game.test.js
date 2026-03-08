@@ -8,6 +8,7 @@ import {
   findEmptyIndex,
   GAME_LIFECYCLE,
   GAME_EVENT_TYPES,
+  MAX_GAME_EVENT_HISTORY,
   gameReducer,
   getMovableIndices,
   isSolved,
@@ -265,6 +266,26 @@ describe("gameReducer", () => {
       timeSeconds: 1,
     });
     expect(scored.events.at(-1).type).toBe(GAME_EVENT_TYPES.SCORE_SAVED);
+  });
+
+  it("caps event history and keeps the most recent events", () => {
+    let state = createGameState(size);
+    const totalMoves = MAX_GAME_EVENT_HISTORY + 75;
+
+    for (let step = 0; step < totalMoves; step += 1) {
+      state = gameReducer(state, {
+        type: "MOVE_TILE",
+        index: 14 + (step % 2),
+        size,
+        source: "player",
+      });
+    }
+
+    expect(state.events).toHaveLength(MAX_GAME_EVENT_HISTORY);
+    expect(state.events[0].type).toBe(GAME_EVENT_TYPES.MOVE_APPLIED);
+    expect(state.events[0].tileIndex).toBe(14 + (75 % 2));
+    expect(state.events.at(-1).type).toBe(GAME_EVENT_TYPES.MOVE_APPLIED);
+    expect(state.events.at(-1).tileIndex).toBe(14 + ((totalMoves - 1) % 2));
   });
 });
 

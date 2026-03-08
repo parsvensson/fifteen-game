@@ -25,4 +25,7 @@ export {
   normalizeHighscoreEntries,
   updateHighscores,
 } from "./domain/highscores.js";
-export { GAME_EVENT_TYPES } from "./domain/gameEvents.js";
+export {
+  GAME_EVENT_TYPES,
+  MAX_GAME_EVENT_HISTORY,
+} from "./domain/gameEvents.js";

@@ -37,4 +37,26 @@ describe("storage", () => {
       { name: "Anonymous", moves: 6, timeSeconds: null, solvedAt: null },
     ]);
   });
+
+  it("returns empty list when storage read throws", () => {
+    const storage = {
+      getItem: () => {
+        throw new Error("SecurityError");
+      },
+      setItem: () => {},
+    };
+
+    expect(loadHighscores(storage)).toEqual([]);
+  });
+
+  it("swallows storage write failures", () => {
+    const storage = {
+      getItem: () => null,
+      setItem: () => {
+        throw new Error("QuotaExceededError");
+      },
+    };
+
+    expect(() => saveHighscores([{ name: "A", moves: 1 }], storage)).not.toThrow();
+  });
 });

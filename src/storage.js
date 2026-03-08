@@ -2,14 +2,32 @@ import { normalizeHighscoreEntries } from "./game.js";
 
 const HIGH_SCORES_KEY = "fifteen.highscores";
 
+function getDefaultStorage() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
 export function loadHighscores(
-  storage = typeof window !== "undefined" ? window.localStorage : null
+  storage = getDefaultStorage()
 ) {
-  if (!storage) {
+  if (!storage || typeof storage.getItem !== "function") {
     return [];
   }
 
-  const raw = storage.getItem(HIGH_SCORES_KEY);
+  let raw = null;
+  try {
+    raw = storage.getItem(HIGH_SCORES_KEY);
+  } catch {
+    return [];
+  }
+
   if (!raw) {
     return [];
   }
@@ -28,11 +46,15 @@ export function loadHighscores(
 
 export function saveHighscores(
   scores,
-  storage = typeof window !== "undefined" ? window.localStorage : null
+  storage = getDefaultStorage()
 ) {
-  if (!storage) {
+  if (!storage || typeof storage.setItem !== "function") {
     return;
   }
 
-  storage.setItem(HIGH_SCORES_KEY, JSON.stringify(scores));
+  try {
+    storage.setItem(HIGH_SCORES_KEY, JSON.stringify(scores));
+  } catch {
+    // Swallow storage failures so gameplay is not interrupted.
+  }
 }

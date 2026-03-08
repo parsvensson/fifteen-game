@@ -25,6 +25,10 @@ When("I click shuffle", async ({ page }) => {
   await expect(shuffleButton).toBeEnabled({ timeout: 8000 });
 });
 
+When("I click robot solve", async ({ page }) => {
+  await page.getByRole("button", { name: "Robot" }).click();
+});
+
 Then("move count should be {int}", async ({ page }, moves) => {
   await expect(page.locator(`[aria-label="Moves: ${moves}"]`)).toBeVisible();
 });

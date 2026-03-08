@@ -106,4 +106,52 @@ describe("App fireworks", () => {
     expect(screen.getByLabelText("Time: 0:00")).toBeInTheDocument();
     vi.useRealTimers();
   });
+
+  it("shows robot status transitions from idle to running to done", () => {
+    vi.useFakeTimers();
+    render(<App />);
+
+    expect(screen.getByText("Robot idle")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Robot" }));
+    expect(screen.getByText("Robot running")).toBeInTheDocument();
+
+    act(() => {
+      vi.runOnlyPendingTimers();
+    });
+    expect(screen.getByText("Robot done")).toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
+  it("executes robot moves and solves an unsolved board", () => {
+    vi.useFakeTimers();
+    render(<App />);
+
+    const tile = screen.getByRole("button", { name: "15" });
+    fireEvent.click(tile);
+    expect(screen.getByText("In progress")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Robot" }));
+    act(() => {
+      vi.advanceTimersByTime(1200);
+    });
+    expect(screen.getByText("Solved!")).toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
+  it("disables tabs and tiles while robot is running, but shuffle cancels", () => {
+    vi.useFakeTimers();
+    render(<App />);
+
+    const tile = screen.getByRole("button", { name: "15" });
+    fireEvent.click(tile);
+    fireEvent.click(screen.getByRole("button", { name: "Robot" }));
+
+    expect(screen.getByRole("button", { name: "Robot..." })).toBeDisabled();
+    expect(screen.getByRole("tab", { name: "Highscores" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "15" })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Shuffle" }));
+    expect(screen.getByText("Robot idle")).toBeInTheDocument();
+    vi.useRealTimers();
+  });
 });

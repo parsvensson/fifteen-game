@@ -22,3 +22,9 @@ Feature: Core gameplay
     And I click shuffle
     Then move count should be 0
     And timer should be 0:00
+
+  Scenario: Robot solves a simple unsolved board
+    Given I open the game
+    When I slide tile "15"
+    And I click robot solve
+    Then I should see solved status

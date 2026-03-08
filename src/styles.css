@@ -90,6 +90,30 @@ h1 {
   color: #2d5b24;
 }
 
+.status--robot {
+  margin-left: 8px;
+}
+
+.status--robot-idle {
+  background: #ebe6de;
+  color: #564f47;
+}
+
+.status--robot-running {
+  background: #e4edf8;
+  color: #21456a;
+}
+
+.status--robot-done {
+  background: #e1f4de;
+  color: #2f5e2a;
+}
+
+.status--robot-error {
+  background: #f7e1dd;
+  color: #7b2a1f;
+}
+
 .header__actions {
   display: grid;
   gap: 10px;
@@ -117,6 +141,11 @@ h1 {
 .view-switch__btn.is-active {
   background: #fff7ea;
   color: #2c2419;
+}
+
+.view-switch__btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .primary {

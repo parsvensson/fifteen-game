@@ -1,6 +1,6 @@
 import React from "react";
 
-export function Board({ board, movable, isShuffling, onTileClick, setTileRef }) {
+export function Board({ board, movable, isShuffling, isAutosolving, onTileClick, setTileRef }) {
   return (
     <main className="board" aria-label="15 puzzle grid">
       {board.map((value, index) => {
@@ -17,7 +17,7 @@ export function Board({ board, movable, isShuffling, onTileClick, setTileRef }) 
             type="button"
             ref={setTileRef(value)}
             onClick={() => onTileClick(index)}
-            disabled={!isMovable || isShuffling}
+            disabled={!isMovable || isShuffling || isAutosolving}
           >
             {value}
           </button>

@@ -5,6 +5,14 @@ export function createSolvedBoard(size = 4) {
   return board;
 }
 
+export function createGameState(size = 4) {
+  return {
+    board: createSolvedBoard(size),
+    moves: 0,
+    isShuffling: false,
+  };
+}
+
 export function findEmptyIndex(board) {
   return board.indexOf(0);
 }
@@ -75,6 +83,50 @@ export function shuffleBoard(board, moves = 50, size = 4, rng = Math.random) {
   }
 
   return nextBoard;
+}
+
+export function gameReducer(state, action) {
+  switch (action.type) {
+    case "MOVE_TILE": {
+      if (state.isShuffling) {
+        return state;
+      }
+
+      const next = applyMove(state, action.index, action.size ?? 4);
+      if (!next.moved) {
+        return state;
+      }
+
+      return {
+        ...state,
+        board: next.board,
+        moves: next.moves,
+      };
+    }
+
+    case "SHUFFLE_START":
+      return {
+        ...state,
+        isShuffling: true,
+        moves: 0,
+      };
+
+    case "SHUFFLE_STEP":
+      return {
+        ...state,
+        board: shuffleBoard(state.board, 1, action.size ?? 4, action.rng),
+        moves: 0,
+      };
+
+    case "SHUFFLE_END":
+      return {
+        ...state,
+        isShuffling: false,
+      };
+
+    default:
+      return state;
+  }
 }
 
 const HIGH_SCORES_KEY = "fifteen.highscores";

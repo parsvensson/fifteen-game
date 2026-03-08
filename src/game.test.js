@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  createGameState,
   createSolvedBoard,
   applyMove,
   findEmptyIndex,
+  gameReducer,
   getMovableIndices,
   isSolved,
   moveTile,
@@ -101,6 +103,24 @@ describe("isSolved", () => {
     const board = createSolvedBoard(size);
     const { board: next } = moveTile(board, 14, size);
     expect(isSolved(next, size)).toBe(false);
+  });
+});
+
+describe("gameReducer", () => {
+  it("moves tiles and increments moves", () => {
+    const state = createGameState(size);
+    const next = gameReducer(state, { type: "MOVE_TILE", index: 14, size });
+    expect(next.moves).toBe(1);
+    expect(next.board[15]).toBe(15);
+    expect(next.isShuffling).toBe(false);
+  });
+
+  it("sets and clears shuffling state", () => {
+    const state = createGameState(size);
+    const started = gameReducer(state, { type: "SHUFFLE_START" });
+    expect(started.isShuffling).toBe(true);
+    const ended = gameReducer(started, { type: "SHUFFLE_END" });
+    expect(ended.isShuffling).toBe(false);
   });
 });
 

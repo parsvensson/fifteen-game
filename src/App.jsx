@@ -1,12 +1,11 @@
 import React from "react";
 import {
-  createSolvedBoard,
-  applyMove,
+  createGameState,
+  gameReducer,
   getMovableIndices,
   isSolved,
   loadHighscores,
   saveHighscores,
-  shuffleBoard,
   updateHighscores,
 } from "./game.js";
 
@@ -14,15 +13,11 @@ const size = 4;
 const defaultPlayerName = "Anonymous";
 
 export default function App() {
-  const [game, setGame] = React.useState(() => ({
-    board: createSolvedBoard(size),
-    moves: 0,
-  }));
-  const [isShuffling, setIsShuffling] = React.useState(false);
+  const [game, dispatch] = React.useReducer(gameReducer, size, createGameState);
   const [highscores, setHighscores] = React.useState(() => loadHighscores());
   const movable = getMovableIndices(game.board, size);
   const solved = isSolved(game.board, size);
-  const celebrate = solved && game.moves > 0 && !isShuffling;
+  const celebrate = solved && game.moves > 0 && !game.isShuffling;
   const previousSolved = React.useRef(solved);
   const tileRefs = React.useRef(new Map());
   const previousTileRects = React.useRef(new Map());
@@ -88,32 +83,27 @@ export default function App() {
   }, [game.board]);
 
   function handleTileClick(index) {
-    if (isShuffling) {
+    if (game.isShuffling) {
       return;
     }
 
-    const nextGame = applyMove(game, index, size);
-    if (nextGame.moved) {
-      shouldAnimateTiles.current = true;
-      setGame({ board: nextGame.board, moves: nextGame.moves });
-    }
+    shouldAnimateTiles.current = true;
+    dispatch({ type: "MOVE_TILE", index, size });
   }
 
   async function handleShuffle() {
-    if (isShuffling) {
+    if (game.isShuffling) {
       return;
     }
 
-    setIsShuffling(true);
-    let nextBoard = game.board;
+    dispatch({ type: "SHUFFLE_START" });
 
     for (let step = 0; step < 50; step += 1) {
-      nextBoard = shuffleBoard(nextBoard, 1, size);
-      setGame({ board: nextBoard, moves: 0 });
+      dispatch({ type: "SHUFFLE_STEP", size });
       await new Promise((resolve) => setTimeout(resolve, 80));
     }
 
-    setIsShuffling(false);
+    dispatch({ type: "SHUFFLE_END" });
   }
 
   return (
@@ -136,7 +126,7 @@ export default function App() {
           className="primary"
           type="button"
           onClick={handleShuffle}
-          disabled={isShuffling}
+          disabled={game.isShuffling}
         >
           Shuffle
         </button>
@@ -169,7 +159,7 @@ export default function App() {
                 }
               }}
               onClick={() => handleTileClick(index)}
-              disabled={!isMovable || isShuffling}
+              disabled={!isMovable || game.isShuffling}
             >
               {value}
             </button>

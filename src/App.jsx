@@ -12,12 +12,21 @@ import {
 const size = 4;
 const defaultPlayerName = "Anonymous";
 
+function formatElapsed(seconds) {
+  const safeSeconds = Math.max(0, seconds);
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainingSeconds = safeSeconds % 60;
+  return `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
+}
+
 export default function App() {
   const [game, dispatch] = React.useReducer(gameReducer, size, createGameState);
   const [highscores, setHighscores] = React.useState(() => loadHighscores());
+  const [elapsedSeconds, setElapsedSeconds] = React.useState(0);
   const movable = getMovableIndices(game.board, size);
   const solved = isSolved(game.board, size);
   const celebrate = solved && game.moves > 0 && !game.isShuffling;
+  const timerRunning = game.moves > 0 && !solved && !game.isShuffling;
   const previousSolved = React.useRef(solved);
   const tileRefs = React.useRef(new Map());
   const previousTileRects = React.useRef(new Map());
@@ -50,6 +59,18 @@ export default function App() {
 
     previousSolved.current = solved;
   }, [solved, game.moves]);
+
+  React.useEffect(() => {
+    if (!timerRunning) {
+      return undefined;
+    }
+
+    const intervalId = setInterval(() => {
+      setElapsedSeconds((seconds) => seconds + 1);
+    }, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [timerRunning]);
 
   React.useLayoutEffect(() => {
     const nextTileRects = new Map();
@@ -136,6 +157,7 @@ export default function App() {
     }
 
     dispatch({ type: "SHUFFLE_START" });
+    setElapsedSeconds(0);
 
     for (let step = 0; step < 50; step += 1) {
       dispatch({ type: "SHUFFLE_STEP", size });
@@ -217,7 +239,7 @@ export default function App() {
 
       <footer className="footer">
         <span>Moves: {game.moves}</span>
-        <span>Time: 0:00</span>
+        <span>Time: {formatElapsed(elapsedSeconds)}</span>
       </footer>
 
       <section className="highscores" aria-label="High scores">

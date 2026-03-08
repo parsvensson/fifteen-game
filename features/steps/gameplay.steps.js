@@ -19,6 +19,13 @@ When("I solve from the initial board with name {string}", async ({ page }, name)
   await page.getByRole("button", { name: "Save score" }).click();
 });
 
+When("I solve from the initial board and skip name", async ({ page }) => {
+  await page.getByRole("button", { name: "15" }).click();
+  await page.getByRole("button", { name: "15" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.getByRole("button", { name: "Skip" }).click();
+});
+
 When("I click shuffle", async ({ page }) => {
   const shuffleButton = page.getByRole("button", { name: "Shuffle" });
   await shuffleButton.click();

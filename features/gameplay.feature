@@ -16,6 +16,12 @@ Feature: Core gameplay
     And I should see fireworks
     And I should see highscore "BDD Player" with 2 moves
 
+  Scenario: Solving allows skipping name and stores default highscore name
+    Given I open the game
+    When I solve from the initial board and skip name
+    Then I should see solved status
+    And I should see highscore "Anonymous" with 2 moves
+
   Scenario: Shuffle resets counters
     Given I open the game
     When I slide tile "15"

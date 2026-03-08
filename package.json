@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest",
+    "bdd:gen": "bddgen",
+    "test:bdd": "npm run bdd:gen && playwright test"
   },
   "dependencies": {
     "fireworks-js": "^2.10.8",
@@ -15,10 +17,12 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^14.2.1",
     "@vitejs/plugin-react": "^4.2.1",
     "jsdom": "^24.0.0",
+    "playwright-bdd": "^8.4.2",
     "vite": "^5.1.4",
     "vitest": "^1.4.0"
   }

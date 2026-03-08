@@ -1,11 +1,13 @@
-export function createSolvedBoard(size = 4) {
+import { BOARD_SIZE, HIGHSCORE_LIMIT } from "./config.js";
+
+export function createSolvedBoard(size = BOARD_SIZE) {
   const total = size * size;
   const board = Array.from({ length: total }, (_, index) => index + 1);
   board[total - 1] = 0;
   return board;
 }
 
-export function createGameState(size = 4) {
+export function createGameState(size = BOARD_SIZE) {
   return {
     board: createSolvedBoard(size),
     moves: 0,
@@ -17,7 +19,7 @@ export function findEmptyIndex(board) {
   return board.indexOf(0);
 }
 
-export function getMovableIndices(board, size = 4) {
+export function getMovableIndices(board, size = BOARD_SIZE) {
   const emptyIndex = findEmptyIndex(board);
   const row = Math.floor(emptyIndex / size);
   const col = emptyIndex % size;
@@ -39,7 +41,7 @@ export function getMovableIndices(board, size = 4) {
   return indices;
 }
 
-export function moveTile(board, tileIndex, size = 4) {
+export function moveTile(board, tileIndex, size = BOARD_SIZE) {
   const movable = getMovableIndices(board, size);
   if (!movable.includes(tileIndex)) {
     return { board, moved: false };
@@ -52,7 +54,7 @@ export function moveTile(board, tileIndex, size = 4) {
   return { board: nextBoard, moved: true };
 }
 
-export function applyMove(state, tileIndex, size = 4) {
+export function applyMove(state, tileIndex, size = BOARD_SIZE) {
   const result = moveTile(state.board, tileIndex, size);
   if (!result.moved) {
     return { ...state, moved: false };
@@ -65,12 +67,17 @@ export function applyMove(state, tileIndex, size = 4) {
   };
 }
 
-export function isSolved(board, size = 4) {
+export function isSolved(board, size = BOARD_SIZE) {
   const solved = createSolvedBoard(size);
   return board.every((value, index) => value === solved[index]);
 }
 
-export function shuffleBoard(board, moves = 50, size = 4, rng = Math.random) {
+export function shuffleBoard(
+  board,
+  moves = 50,
+  size = BOARD_SIZE,
+  rng = Math.random
+) {
   if (moves <= 0) {
     return board;
   }
@@ -92,7 +99,7 @@ export function gameReducer(state, action) {
         return state;
       }
 
-      const next = applyMove(state, action.index, action.size ?? 4);
+      const next = applyMove(state, action.index, action.size ?? BOARD_SIZE);
       if (!next.moved) {
         return state;
       }
@@ -114,7 +121,7 @@ export function gameReducer(state, action) {
     case "SHUFFLE_STEP":
       return {
         ...state,
-        board: shuffleBoard(state.board, 1, action.size ?? 4, action.rng),
+        board: shuffleBoard(state.board, 1, action.size ?? BOARD_SIZE, action.rng),
         moves: 0,
       };
 
@@ -152,7 +159,12 @@ function normalizeScoreEntry(entry) {
   return null;
 }
 
-export function updateHighscores(scores, moves, name = "Anonymous", limit = 5) {
+export function updateHighscores(
+  scores,
+  moves,
+  name = "Anonymous",
+  limit = HIGHSCORE_LIMIT
+) {
   const next = [
     ...scores.map(normalizeScoreEntry).filter(Boolean),
     { name: normalizePlayerName(name), moves },

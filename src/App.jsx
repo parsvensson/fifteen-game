@@ -1,5 +1,11 @@
 import React from "react";
 import {
+  BOARD_SIZE,
+  HIGHSCORE_LIMIT,
+  SHUFFLE_DELAY_MS,
+  SHUFFLE_STEPS,
+} from "./config.js";
+import {
   createGameState,
   gameReducer,
   getMovableIndices,
@@ -9,7 +15,6 @@ import {
   updateHighscores,
 } from "./game.js";
 
-const size = 4;
 const defaultPlayerName = "Anonymous";
 
 function formatElapsed(seconds) {
@@ -20,11 +25,15 @@ function formatElapsed(seconds) {
 }
 
 export default function App() {
-  const [game, dispatch] = React.useReducer(gameReducer, size, createGameState);
+  const [game, dispatch] = React.useReducer(
+    gameReducer,
+    BOARD_SIZE,
+    createGameState
+  );
   const [highscores, setHighscores] = React.useState(() => loadHighscores());
   const [elapsedSeconds, setElapsedSeconds] = React.useState(0);
-  const movable = getMovableIndices(game.board, size);
-  const solved = isSolved(game.board, size);
+  const movable = getMovableIndices(game.board, BOARD_SIZE);
+  const solved = isSolved(game.board, BOARD_SIZE);
   const celebrate = solved && game.moves > 0 && !game.isShuffling;
   const timerRunning = game.moves > 0 && !solved && !game.isShuffling;
   const previousSolved = React.useRef(solved);
@@ -51,7 +60,7 @@ export default function App() {
     if (solved && !previousSolved.current && game.moves > 0) {
       const name = getPlayerName();
       setHighscores((prev) => {
-        const updated = updateHighscores(prev, game.moves, name, 5);
+        const updated = updateHighscores(prev, game.moves, name, HIGHSCORE_LIMIT);
         saveHighscores(updated);
         return updated;
       });
@@ -148,7 +157,7 @@ export default function App() {
     }
 
     shouldAnimateTiles.current = true;
-    dispatch({ type: "MOVE_TILE", index, size });
+    dispatch({ type: "MOVE_TILE", index, size: BOARD_SIZE });
   }
 
   async function handleShuffle() {
@@ -159,9 +168,9 @@ export default function App() {
     dispatch({ type: "SHUFFLE_START" });
     setElapsedSeconds(0);
 
-    for (let step = 0; step < 50; step += 1) {
-      dispatch({ type: "SHUFFLE_STEP", size });
-      await new Promise((resolve) => setTimeout(resolve, 80));
+    for (let step = 0; step < SHUFFLE_STEPS; step += 1) {
+      dispatch({ type: "SHUFFLE_STEP", size: BOARD_SIZE });
+      await new Promise((resolve) => setTimeout(resolve, SHUFFLE_DELAY_MS));
     }
 
     dispatch({ type: "SHUFFLE_END" });

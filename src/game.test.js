@@ -259,7 +259,8 @@ describe("gameReducer", () => {
     });
     expect(stopped.events.at(-1).type).toBe(GAME_EVENT_TYPES.SOLVE_COMPLETED);
 
-    const scored = gameReducer(stopped, {
+    const naming = gameReducer(stopped, { type: "NAME_CAPTURE_START" });
+    const scored = gameReducer(naming, {
       type: "SCORE_SAVED",
       name: "A",
       moves: 2,
@@ -286,6 +287,50 @@ describe("gameReducer", () => {
     expect(state.events[0].tileIndex).toBe(14 + (75 % 2));
     expect(state.events.at(-1).type).toBe(GAME_EVENT_TYPES.MOVE_APPLIED);
     expect(state.events.at(-1).tileIndex).toBe(14 + ((totalMoves - 1) % 2));
+  });
+
+  it("ignores invalid lifecycle transitions and side effects", () => {
+    const initial = createGameState(size);
+
+    const stopWithoutStart = gameReducer(initial, {
+      type: "AUTOSOLVE_STOP",
+      status: "cancelled",
+    });
+    expect(stopWithoutStart).toBe(initial);
+
+    const invalidNameStart = gameReducer(initial, { type: "NAME_CAPTURE_START" });
+    expect(invalidNameStart).toBe(initial);
+
+    const invalidNameEnd = gameReducer(initial, { type: "NAME_CAPTURE_END" });
+    expect(invalidNameEnd).toBe(initial);
+
+    const invalidScoreSave = gameReducer(initial, {
+      type: "SCORE_SAVED",
+      name: "A",
+      moves: 1,
+      timeSeconds: 1,
+    });
+    expect(invalidScoreSave).toBe(initial);
+
+    const solvedMove = gameReducer(initial, { type: "MOVE_TILE", index: 14, size });
+    const solved = gameReducer(solvedMove, { type: "BOARD_SOLVED" });
+    const naming = gameReducer(solved, { type: "NAME_CAPTURE_START" });
+    const blockedAutosolve = gameReducer(naming, { type: "AUTOSOLVE_START" });
+    expect(blockedAutosolve).toBe(naming);
+
+    const blockedShuffle = gameReducer(naming, { type: "SHUFFLE_START" });
+    expect(blockedShuffle).toBe(naming);
+
+    const shuffleStepOutsideShuffle = gameReducer(initial, {
+      type: "SHUFFLE_STEP",
+      size,
+      step: 1,
+      rng: () => 0,
+    });
+    expect(shuffleStepOutsideShuffle).toBe(initial);
+
+    const shuffleEndOutsideShuffle = gameReducer(initial, { type: "SHUFFLE_END" });
+    expect(shuffleEndOutsideShuffle).toBe(initial);
   });
 });
 

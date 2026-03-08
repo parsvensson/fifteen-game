@@ -41,6 +41,10 @@ export function applyMove(state, tileIndex, size = BOARD_SIZE) {
 export function gameReducer(state, action) {
   switch (action.type) {
     case "MOVE_TILE": {
+      if (action.source === "solve" && state.lifecycle !== GAME_LIFECYCLE.AUTOSOLVING) {
+        return state;
+      }
+
       if (
         state.lifecycle === GAME_LIFECYCLE.SHUFFLING ||
         state.lifecycle === GAME_LIFECYCLE.NAME_CAPTURE
@@ -57,7 +61,10 @@ export function gameReducer(state, action) {
         ...state,
         board: next.board,
         moves: next.moves,
-        lifecycle: GAME_LIFECYCLE.PLAYING,
+        lifecycle:
+          action.source === "solve"
+            ? GAME_LIFECYCLE.AUTOSOLVING
+            : GAME_LIFECYCLE.PLAYING,
       };
       const nextEmpty = findEmptyIndex(next.board);
       const withMoveEvent = appendGameEvent(
@@ -84,6 +91,13 @@ export function gameReducer(state, action) {
     }
 
     case "SHUFFLE_START":
+      if (
+        state.lifecycle === GAME_LIFECYCLE.SHUFFLING ||
+        state.lifecycle === GAME_LIFECYCLE.AUTOSOLVING ||
+        state.lifecycle === GAME_LIFECYCLE.NAME_CAPTURE
+      ) {
+        return state;
+      }
       return appendGameEvent({
         ...state,
         isShuffling: true,
@@ -95,6 +109,10 @@ export function gameReducer(state, action) {
       }));
 
     case "SHUFFLE_STEP": {
+      if (state.lifecycle !== GAME_LIFECYCLE.SHUFFLING) {
+        return state;
+      }
+
       const size = action.size ?? BOARD_SIZE;
       const rng = action.rng ?? Math.random;
       const movable = getMovableIndices(state.board, size);
@@ -115,6 +133,9 @@ export function gameReducer(state, action) {
     }
 
     case "SHUFFLE_END":
+      if (state.lifecycle !== GAME_LIFECYCLE.SHUFFLING) {
+        return state;
+      }
       return appendGameEvent({
         ...state,
         isShuffling: false,
@@ -124,7 +145,11 @@ export function gameReducer(state, action) {
       }, createGameEvent(GAME_EVENT_TYPES.SHUFFLE_COMPLETED));
 
     case "AUTOSOLVE_START":
-      if (state.lifecycle === GAME_LIFECYCLE.SHUFFLING) {
+      if (
+        state.lifecycle === GAME_LIFECYCLE.SHUFFLING ||
+        state.lifecycle === GAME_LIFECYCLE.NAME_CAPTURE ||
+        state.lifecycle === GAME_LIFECYCLE.AUTOSOLVING
+      ) {
         return state;
       }
       return appendGameEvent({
@@ -136,6 +161,9 @@ export function gameReducer(state, action) {
       }));
 
     case "AUTOSOLVE_STOP":
+      if (state.lifecycle !== GAME_LIFECYCLE.AUTOSOLVING) {
+        return state;
+      }
       return appendGameEvent({
         ...state,
         lifecycle:
@@ -150,24 +178,39 @@ export function gameReducer(state, action) {
       }));
 
     case "BOARD_SOLVED":
+      if (
+        state.lifecycle !== GAME_LIFECYCLE.PLAYING &&
+        state.lifecycle !== GAME_LIFECYCLE.AUTOSOLVING
+      ) {
+        return state;
+      }
       return {
         ...state,
         lifecycle: GAME_LIFECYCLE.SOLVED,
       };
 
     case "NAME_CAPTURE_START":
+      if (state.lifecycle !== GAME_LIFECYCLE.SOLVED) {
+        return state;
+      }
       return {
         ...state,
         lifecycle: GAME_LIFECYCLE.NAME_CAPTURE,
       };
 
     case "NAME_CAPTURE_END":
+      if (state.lifecycle !== GAME_LIFECYCLE.NAME_CAPTURE) {
+        return state;
+      }
       return {
         ...state,
         lifecycle: GAME_LIFECYCLE.IDLE,
       };
 
     case "SCORE_SAVED":
+      if (state.lifecycle !== GAME_LIFECYCLE.NAME_CAPTURE) {
+        return state;
+      }
       return appendGameEvent(state, createGameEvent(GAME_EVENT_TYPES.SCORE_SAVED, {
         name: action.name,
         moves: action.moves,

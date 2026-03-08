@@ -9,7 +9,6 @@ bd ready              # Find available work
 bd show <id>          # View issue details
 bd update <id> --claim  # Claim work atomically
 bd close <id>         # Complete work
-bd sync               # Sync with git
 ```
 
 ## Non-Interactive Shell Commands
@@ -149,3 +148,10 @@ For more details, see README.md and docs/QUICKSTART.md.
 
 <!-- END BEADS INTEGRATION -->
 Use 'bd' for task tracking
+
+## Project Commands
+
+```bash
+npm run dev -- --host 0.0.0.0 --port 5173  # Start Vite dev server
+npm test -- --run                            # Run vitest once (non-watch)
+```

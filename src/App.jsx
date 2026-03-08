@@ -13,6 +13,7 @@ import {
   updateHighscores,
 } from "./game.js";
 import { loadHighscores, saveHighscores } from "./storage.js";
+import { useShuffle } from "./useShuffle.js";
 
 const defaultPlayerName = "Anonymous";
 
@@ -40,6 +41,12 @@ export default function App() {
   const previousTileRects = React.useRef(new Map());
   const shouldAnimateTiles = React.useRef(false);
   const fireworksContainerRef = React.useRef(null);
+  const { runShuffle } = useShuffle({
+    dispatch,
+    size: BOARD_SIZE,
+    steps: SHUFFLE_STEPS,
+    delayMs: SHUFFLE_DELAY_MS,
+  });
 
   function getPlayerName() {
     if (typeof window === "undefined" || typeof window.prompt !== "function") {
@@ -164,15 +171,8 @@ export default function App() {
       return;
     }
 
-    dispatch({ type: "SHUFFLE_START" });
     setElapsedSeconds(0);
-
-    for (let step = 0; step < SHUFFLE_STEPS; step += 1) {
-      dispatch({ type: "SHUFFLE_STEP", size: BOARD_SIZE });
-      await new Promise((resolve) => setTimeout(resolve, SHUFFLE_DELAY_MS));
-    }
-
-    dispatch({ type: "SHUFFLE_END" });
+    await runShuffle();
   }
 
   return (

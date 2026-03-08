@@ -165,7 +165,7 @@ h1 {
   padding: 0;
   box-shadow: 0 10px 18px rgba(15, 31, 30, 0.12);
   cursor: pointer;
-  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+  transition: transform 240ms ease, background 180ms ease;
 }
 
 .tile.movable {
@@ -180,12 +180,13 @@ h1 {
 }
 
 .tile:disabled {
-  cursor: not-allowed;
-  box-shadow: none;
+  cursor: pointer;
+  opacity: 1;
 }
 
 .tile.empty {
   background: transparent;
+  border: none;
   box-shadow: none;
 }
 
@@ -253,6 +254,12 @@ h1 {
   gap: 12px;
 }
 
+.highscores__actions {
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+
 .highscores h2 {
   margin: 0;
   font-size: 1.1rem;
@@ -300,10 +307,108 @@ h1 {
   white-space: nowrap;
 }
 
+.score--meta {
+  display: grid;
+  justify-items: end;
+  white-space: normal;
+  text-align: right;
+  line-height: 1.2;
+}
+
+.score__date {
+  font-size: 0.75rem;
+  color: #745f47;
+}
+
+.secondary {
+  border: 1px solid #b8a183;
+  border-radius: 999px;
+  background: #fff4e4;
+  color: #5e4229;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+
+.secondary:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.screen-fade-in {
+  animation: screen-fade-in 220ms ease;
+}
+
+@keyframes screen-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .fireworks {
   pointer-events: none;
   position: absolute;
   inset: 0;
+}
+
+@media (max-width: 720px) and (max-height: 760px) {
+  body {
+    padding: 6px;
+  }
+
+  #root {
+    width: min(960px, 98vw);
+    height: calc(100dvh - 12px);
+  }
+
+  .app {
+    padding: 10px;
+    border-radius: 20px;
+    gap: 8px;
+  }
+
+  h1 {
+    font-size: clamp(1.9rem, 7.2vw, 2.4rem);
+  }
+
+  .subhead {
+    margin-top: 4px;
+    font-size: 0.86rem;
+  }
+
+  .status {
+    margin-top: 6px;
+    padding: 4px 10px;
+  }
+
+  .game-screen {
+    gap: 8px;
+  }
+
+  .instructions {
+    font-size: 0.82rem;
+  }
+
+  .score-strip__cell {
+    padding: 8px 6px 9px;
+  }
+
+  .board {
+    width: min(52vh, 90vw);
+    gap: min(1.4vmin, 8px);
+    padding: min(2vmin, 11px);
+  }
+
+  .tile {
+    border-radius: 12px;
+  }
 }
 
 @media (max-width: 720px) {

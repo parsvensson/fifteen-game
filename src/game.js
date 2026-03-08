@@ -143,7 +143,7 @@ function normalizePlayerName(name) {
 
 function normalizeScoreEntry(entry) {
   if (typeof entry === "number" && Number.isFinite(entry)) {
-    return { name: "Anonymous", moves: entry, timeSeconds: null };
+    return { name: "Anonymous", moves: entry, timeSeconds: null, solvedAt: null };
   }
 
   if (
@@ -152,7 +152,13 @@ function normalizeScoreEntry(entry) {
     Number.isFinite(entry.moves)
   ) {
     const timeSeconds = Number.isFinite(entry.timeSeconds) ? entry.timeSeconds : null;
-    return { name: normalizePlayerName(entry.name), moves: entry.moves, timeSeconds };
+    const solvedAt = typeof entry.solvedAt === "string" ? entry.solvedAt : null;
+    return {
+      name: normalizePlayerName(entry.name),
+      moves: entry.moves,
+      timeSeconds,
+      solvedAt,
+    };
   }
 
   return null;
@@ -163,7 +169,8 @@ export function updateHighscores(
   moves,
   timeSeconds,
   name = "Anonymous",
-  limit = HIGHSCORE_LIMIT
+  limit = HIGHSCORE_LIMIT,
+  solvedAt = null
 ) {
   const next = [
     ...scores.map(normalizeScoreEntry).filter(Boolean),
@@ -171,6 +178,7 @@ export function updateHighscores(
       name: normalizePlayerName(name),
       moves,
       timeSeconds: Number.isFinite(timeSeconds) ? timeSeconds : null,
+      solvedAt: typeof solvedAt === "string" ? solvedAt : null,
     },
   ];
 
@@ -180,6 +188,7 @@ export function updateHighscores(
         a.moves - b.moves ||
         (a.timeSeconds ?? Number.MAX_SAFE_INTEGER) -
           (b.timeSeconds ?? Number.MAX_SAFE_INTEGER) ||
+        (b.solvedAt ?? "").localeCompare(a.solvedAt ?? "") ||
         a.name.localeCompare(b.name)
     )
     .slice(0, limit);

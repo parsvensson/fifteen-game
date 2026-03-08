@@ -13,16 +13,19 @@ vi.mock("fireworks-js", () => ({
 
 describe("App fireworks", () => {
   const originalPrompt = window.prompt;
+  const originalConfirm = window.confirm;
 
   beforeEach(() => {
     window.localStorage.clear();
     window.prompt = vi.fn(() => "Player");
+    window.confirm = vi.fn(() => true);
   });
 
   afterEach(() => cleanup());
   afterEach(() => {
     vi.useRealTimers();
     window.prompt = originalPrompt;
+    window.confirm = originalConfirm;
   });
 
   it("does not show fireworks on initial load", () => {
@@ -31,14 +34,35 @@ describe("App fireworks", () => {
   });
 
   it("shows fireworks after solving the puzzle", () => {
+    vi.useFakeTimers();
     render(<App />);
     const tile = screen.getByRole("button", { name: "15" });
     fireEvent.click(tile);
     fireEvent.click(tile);
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
     expect(screen.getByTestId("fireworks")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("tab", { name: "Highscores" }));
     expect(screen.getByText("Player")).toBeInTheDocument();
     expect(screen.getByText(/2 moves · 0:00/i)).toBeInTheDocument();
+    expect(screen.queryByText(/unknown date/i)).not.toBeInTheDocument();
+  });
+
+  it("resets highscores after confirmation", () => {
+    vi.useFakeTimers();
+    render(<App />);
+    const tile = screen.getByRole("button", { name: "15" });
+    fireEvent.click(tile);
+    fireEvent.click(tile);
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    fireEvent.click(screen.getByRole("tab", { name: "Highscores" }));
+    expect(screen.getByText("Player")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Reset" }));
+    expect(screen.getByText("No scores yet")).toBeInTheDocument();
   });
 
   it("renders slide instructions", () => {

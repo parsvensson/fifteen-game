@@ -135,9 +135,9 @@ describe("highscores", () => {
       5
     );
     expect(updated).toEqual([
-      { name: "B", moves: 40, timeSeconds: 70 },
-      { name: "C", moves: 45, timeSeconds: 80 },
-      { name: "A", moves: 50, timeSeconds: 90 },
+      { name: "B", moves: 40, timeSeconds: 70, solvedAt: null },
+      { name: "C", moves: 45, timeSeconds: 80, solvedAt: null },
+      { name: "A", moves: 50, timeSeconds: 90, solvedAt: null },
     ]);
   });
 
@@ -156,11 +156,21 @@ describe("highscores", () => {
       5
     );
     expect(updated).toEqual([
-      { name: "F", moves: 9, timeSeconds: 20 },
-      { name: "A", moves: 10, timeSeconds: null },
-      { name: "B", moves: 11, timeSeconds: null },
-      { name: "C", moves: 12, timeSeconds: null },
-      { name: "D", moves: 13, timeSeconds: null },
+      { name: "F", moves: 9, timeSeconds: 20, solvedAt: null },
+      { name: "A", moves: 10, timeSeconds: null, solvedAt: null },
+      { name: "B", moves: 11, timeSeconds: null, solvedAt: null },
+      { name: "C", moves: 12, timeSeconds: null, solvedAt: null },
+      { name: "D", moves: 13, timeSeconds: null, solvedAt: null },
     ]);
+  });
+
+  it("stores solved timestamp metadata", () => {
+    const updated = updateHighscores([], 12, 40, "A", 5, "2026-03-08T20:00:00.000Z");
+    expect(updated[0]).toEqual({
+      name: "A",
+      moves: 12,
+      timeSeconds: 40,
+      solvedAt: "2026-03-08T20:00:00.000Z",
+    });
   });
 });

@@ -5,6 +5,7 @@ import {
   HIGHSCORE_LIMIT,
   SHUFFLE_DELAY_MS,
   SHUFFLE_STEPS,
+  TILE_SLIDE_DURATION_MS,
 } from "./config.js";
 import {
   createGameState,
@@ -23,6 +24,7 @@ import { Highscores } from "./components/Highscores.jsx";
 import { ScoreStrip } from "./components/ScoreStrip.jsx";
 
 const defaultPlayerName = "Anonymous";
+const SOLVE_PROMPT_DELAY_MS = TILE_SLIDE_DURATION_MS + 30;
 
 export default function App() {
   const [game, dispatch] = React.useReducer(
@@ -64,7 +66,12 @@ export default function App() {
   }
 
   React.useEffect(() => {
-    if (solved && !previousSolved.current && game.moves > 0) {
+    if (!(solved && !previousSolved.current && game.moves > 0)) {
+      previousSolved.current = solved;
+      return undefined;
+    }
+
+    const timerId = setTimeout(() => {
       const name = getPlayerName();
       setHighscores((prev) => {
         const updated = updateHighscores(
@@ -72,14 +79,16 @@ export default function App() {
           game.moves,
           elapsedSeconds,
           name,
-          HIGHSCORE_LIMIT
+          HIGHSCORE_LIMIT,
+          new Date().toISOString()
         );
         saveHighscores(updated);
         return updated;
       });
-    }
+    }, SOLVE_PROMPT_DELAY_MS);
 
     previousSolved.current = solved;
+    return () => clearTimeout(timerId);
   }, [elapsedSeconds, solved, game.moves]);
 
   React.useEffect(() => {
@@ -117,7 +126,7 @@ export default function App() {
         node.style.transition = "none";
         node.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
         node.getBoundingClientRect();
-        node.style.transition = "transform 180ms ease";
+        node.style.transition = `transform ${TILE_SLIDE_DURATION_MS}ms ease`;
         node.style.transform = "";
       });
     }
@@ -182,6 +191,18 @@ export default function App() {
     await runShuffle();
   }
 
+  function handleResetHighscores() {
+    if (typeof window !== "undefined" && typeof window.confirm === "function") {
+      const accepted = window.confirm("Clear all highscores?");
+      if (!accepted) {
+        return;
+      }
+    }
+
+    setHighscores([]);
+    saveHighscores([]);
+  }
+
   const setTileRef = React.useCallback(
     (value) => (node) => {
       if (node) {
@@ -204,7 +225,7 @@ export default function App() {
         onShuffle={handleShuffle}
       />
       {activeScreen === "game" ? (
-        <section className="game-screen">
+        <section className="game-screen screen-fade-in">
           <ScoreStrip moves={game.moves} elapsed={formatElapsed(elapsedSeconds)} />
           <p className="instructions">
             Click a tile next to the empty space to slide it.
@@ -222,7 +243,7 @@ export default function App() {
           />
         </section>
       ) : (
-        <Highscores highscores={highscores} />
+        <Highscores highscores={highscores} onReset={handleResetHighscores} />
       )}
     </div>
   );

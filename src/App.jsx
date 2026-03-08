@@ -14,6 +14,11 @@ import {
 } from "./game.js";
 import { loadHighscores, saveHighscores } from "./storage.js";
 import { useShuffle } from "./useShuffle.js";
+import { Board } from "./components/Board.jsx";
+import { FireworksLayer } from "./components/FireworksLayer.jsx";
+import { Footer } from "./components/Footer.jsx";
+import { Header } from "./components/Header.jsx";
+import { Highscores } from "./components/Highscores.jsx";
 
 const defaultPlayerName = "Anonymous";
 
@@ -175,100 +180,37 @@ export default function App() {
     await runShuffle();
   }
 
+  const setTileRef = React.useCallback(
+    (value) => (node) => {
+      if (node) {
+        tileRefs.current.set(value, node);
+      } else {
+        tileRefs.current.delete(value);
+      }
+    },
+    []
+  );
+
   return (
     <div className="app">
-      <header className="header">
-        <div>
-          <p className="eyebrow">Classic sliding puzzle</p>
-          <h1>Fifteen</h1>
-          <p className="subhead">
-            Arrange the tiles in order by sliding into the empty space.
-          </p>
-          <p className="instructions">
-            Click a tile next to the empty space to slide it.
-          </p>
-          <p className={`status ${solved ? "status--solved" : ""}`}>
-            {solved ? "Solved!" : "In progress"}
-          </p>
-        </div>
-        <button
-          className="primary"
-          type="button"
-          onClick={handleShuffle}
-          disabled={game.isShuffling}
-        >
-          Shuffle
-        </button>
-      </header>
-
-      <main className="board" aria-label="15 puzzle grid">
-        {game.board.map((value, index) => {
-          if (value === 0) {
-            return (
-              <div
-                key={`empty-${index}`}
-                className="tile empty"
-                aria-hidden="true"
-              />
-            );
-          }
-
-          const isMovable = movable.includes(index);
-
-          return (
-            <button
-              key={value}
-              className={`tile ${isMovable ? "movable" : ""}`}
-              type="button"
-              ref={(node) => {
-                if (node) {
-                  tileRefs.current.set(value, node);
-                } else {
-                  tileRefs.current.delete(value);
-                }
-              }}
-              onClick={() => handleTileClick(index)}
-              disabled={!isMovable || game.isShuffling}
-            >
-              {value}
-            </button>
-          );
-        })}
-      </main>
-
-      {celebrate ? (
-        <div
-          ref={fireworksContainerRef}
-          className="fireworks"
-          data-testid="fireworks"
-          aria-hidden="true"
-        />
-      ) : null}
-
-      <footer className="footer">
-        <span>Moves: {game.moves}</span>
-        <span>Time: {formatElapsed(elapsedSeconds)}</span>
-      </footer>
-
-      <section className="highscores" aria-label="High scores">
-        <div className="highscores__header">
-          <h2>High scores</h2>
-          <span className="highscores__subhead">Fewest moves wins</span>
-        </div>
-        <ol className="highscores__list">
-          {highscores.length > 0 ? (
-            highscores.map((score, index) => (
-              <li key={`score-${score.name}-${score.moves}-${index}`}>
-                <span className="rank">#{index + 1}</span>
-                <span className="player">{score.name}</span>
-                <span className="score">{score.moves} moves</span>
-              </li>
-            ))
-          ) : (
-            <li className="empty">No scores yet</li>
-          )}
-        </ol>
-      </section>
+      <Header
+        solved={solved}
+        isShuffling={game.isShuffling}
+        onShuffle={handleShuffle}
+      />
+      <Board
+        board={game.board}
+        movable={movable}
+        isShuffling={game.isShuffling}
+        onTileClick={handleTileClick}
+        setTileRef={setTileRef}
+      />
+      <FireworksLayer
+        celebrate={celebrate}
+        fireworksContainerRef={fireworksContainerRef}
+      />
+      <Footer moves={game.moves} elapsed={formatElapsed(elapsedSeconds)} />
+      <Highscores highscores={highscores} />
     </div>
   );
 }

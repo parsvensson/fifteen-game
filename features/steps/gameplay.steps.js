@@ -12,11 +12,11 @@ When("I slide tile {string}", async ({ page }, tileValue) => {
 });
 
 When("I solve from the initial board with name {string}", async ({ page }, name) => {
-  page.once("dialog", async (dialog) => {
-    await dialog.accept(name);
-  });
   await page.getByRole("button", { name: "15" }).click();
   await page.getByRole("button", { name: "15" }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.getByLabel("Name").fill(name);
+  await page.getByRole("button", { name: "Save score" }).click();
 });
 
 When("I click shuffle", async ({ page }) => {

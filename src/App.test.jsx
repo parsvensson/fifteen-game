@@ -12,19 +12,16 @@ vi.mock("fireworks-js", () => ({
 }));
 
 describe("App fireworks", () => {
-  const originalPrompt = window.prompt;
   const originalConfirm = window.confirm;
 
   beforeEach(() => {
     window.localStorage.clear();
-    window.prompt = vi.fn(() => "Player");
     window.confirm = vi.fn(() => true);
   });
 
   afterEach(() => cleanup());
   afterEach(() => {
     vi.useRealTimers();
-    window.prompt = originalPrompt;
     window.confirm = originalConfirm;
   });
 
@@ -42,6 +39,9 @@ describe("App fireworks", () => {
     act(() => {
       vi.advanceTimersByTime(1300);
     });
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Player" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save score" }));
     expect(screen.getByTestId("fireworks")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("tab", { name: "Highscores" }));
     expect(screen.getByText("Player")).toBeInTheDocument();
@@ -58,11 +58,43 @@ describe("App fireworks", () => {
     act(() => {
       vi.advanceTimersByTime(1300);
     });
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Player" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save score" }));
     fireEvent.click(screen.getByRole("tab", { name: "Highscores" }));
     expect(screen.getByText("Player")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Reset" }));
     expect(screen.getByText("No scores yet")).toBeInTheDocument();
+  });
+
+  it("uses default player name when winner skips", () => {
+    vi.useFakeTimers();
+    render(<App />);
+    const tile = screen.getByRole("button", { name: "15" });
+    fireEvent.click(tile);
+    fireEvent.click(tile);
+    act(() => {
+      vi.advanceTimersByTime(1300);
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Skip" }));
+
+    fireEvent.click(screen.getByRole("tab", { name: "Highscores" }));
+    expect(screen.getByText("Anonymous")).toBeInTheDocument();
+  });
+
+  it("supports escape key to dismiss name modal", () => {
+    vi.useFakeTimers();
+    render(<App />);
+    const tile = screen.getByRole("button", { name: "15" });
+    fireEvent.click(tile);
+    fireEvent.click(tile);
+    act(() => {
+      vi.advanceTimersByTime(1300);
+    });
+    fireEvent.keyDown(screen.getByLabelText("Name"), { key: "Escape" });
+
+    fireEvent.click(screen.getByRole("tab", { name: "Highscores" }));
+    expect(screen.getByText("Anonymous")).toBeInTheDocument();
   });
 
   it("renders slide instructions", () => {

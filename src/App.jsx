@@ -22,6 +22,7 @@ import { Board } from "./components/Board.jsx";
 import { FireworksLayer } from "./components/FireworksLayer.jsx";
 import { Header } from "./components/Header.jsx";
 import { Highscores } from "./components/Highscores.jsx";
+import { NameModal } from "./components/NameModal.jsx";
 import { ScoreStrip } from "./components/ScoreStrip.jsx";
 
 const defaultPlayerName = "Anonymous";
@@ -39,6 +40,8 @@ export default function App() {
   const [elapsedSeconds, setElapsedSeconds] = React.useState(0);
   const [autosolveStatus, setAutosolveStatus] = React.useState("idle");
   const [pendingSolve, setPendingSolve] = React.useState(null);
+  const [namePromptSolve, setNamePromptSolve] = React.useState(null);
+  const [nameInput, setNameInput] = React.useState("");
   const [celebrationStartedAt, setCelebrationStartedAt] = React.useState(null);
   const movable = getMovableIndices(game.board, BOARD_SIZE);
   const solved = isSolved(game.board, BOARD_SIZE);
@@ -83,19 +86,26 @@ export default function App() {
 
   React.useEffect(() => () => cancelAutosolve(), [cancelAutosolve]);
 
-  function getPlayerName() {
-    if (typeof window === "undefined" || typeof window.prompt !== "function") {
-      return defaultPlayerName;
+  const saveSolvedScore = React.useCallback((solve, rawName) => {
+    if (!solve) {
+      return;
     }
 
-    try {
-      const input = window.prompt("You solved it! Enter your name for highscores:", "");
-      const trimmed = typeof input === "string" ? input.trim() : "";
-      return trimmed || defaultPlayerName;
-    } catch {
-      return defaultPlayerName;
-    }
-  }
+    const trimmed = typeof rawName === "string" ? rawName.trim() : "";
+    const name = trimmed || defaultPlayerName;
+    setHighscores((prev) => {
+      const updated = updateHighscores(
+        prev,
+        solve.moves,
+        solve.elapsed,
+        name,
+        HIGHSCORE_LIMIT,
+        new Date().toISOString()
+      );
+      saveHighscores(updated);
+      return updated;
+    });
+  }, []);
 
   React.useEffect(() => {
     if (!(solved && !previousSolved.current && game.moves > 0)) {
@@ -120,19 +130,8 @@ export default function App() {
     const baseTime = celebrationStartedAt ?? pendingSolve.solvedAt;
     const waitMs = Math.max(0, baseTime + SOLVE_PROMPT_DELAY_MS - Date.now());
     const timerId = setTimeout(() => {
-      const name = getPlayerName();
-      setHighscores((prev) => {
-        const updated = updateHighscores(
-          prev,
-          pendingSolve.moves,
-          pendingSolve.elapsed,
-          name,
-          HIGHSCORE_LIMIT,
-          new Date().toISOString()
-        );
-        saveHighscores(updated);
-        return updated;
-      });
+      setNamePromptSolve(pendingSolve);
+      setNameInput("");
       setPendingSolve(null);
       setCelebrationStartedAt(null);
     }, waitMs);
@@ -263,9 +262,23 @@ export default function App() {
     }
 
     setPendingSolve(null);
+    setNamePromptSolve(null);
+    setNameInput("");
     setCelebrationStartedAt(null);
     setElapsedSeconds(0);
     await runShuffle();
+  }
+
+  function handleNameSubmit() {
+    saveSolvedScore(namePromptSolve, nameInput);
+    setNamePromptSolve(null);
+    setNameInput("");
+  }
+
+  function handleNameCancel() {
+    saveSolvedScore(namePromptSolve, defaultPlayerName);
+    setNamePromptSolve(null);
+    setNameInput("");
   }
 
   function handleRobotSolve() {
@@ -376,6 +389,13 @@ export default function App() {
       ) : (
         <Highscores highscores={highscores} onReset={handleResetHighscores} />
       )}
+      <NameModal
+        open={Boolean(namePromptSolve)}
+        value={nameInput}
+        onChange={setNameInput}
+        onSubmit={handleNameSubmit}
+        onCancel={handleNameCancel}
+      />
     </div>
   );
 }

@@ -79,8 +79,36 @@ export function shuffleBoard(board, moves = 50, size = 4, rng = Math.random) {
 
 const HIGH_SCORES_KEY = "fifteen.highscores";
 
-export function updateHighscores(scores, moves, limit = 5) {
-  return [...scores, moves].sort((a, b) => a - b).slice(0, limit);
+function normalizePlayerName(name) {
+  const trimmed = typeof name === "string" ? name.trim() : "";
+  return trimmed || "Anonymous";
+}
+
+function normalizeScoreEntry(entry) {
+  if (typeof entry === "number" && Number.isFinite(entry)) {
+    return { name: "Anonymous", moves: entry };
+  }
+
+  if (
+    entry &&
+    typeof entry === "object" &&
+    Number.isFinite(entry.moves)
+  ) {
+    return { name: normalizePlayerName(entry.name), moves: entry.moves };
+  }
+
+  return null;
+}
+
+export function updateHighscores(scores, moves, name = "Anonymous", limit = 5) {
+  const next = [
+    ...scores.map(normalizeScoreEntry).filter(Boolean),
+    { name: normalizePlayerName(name), moves },
+  ];
+
+  return next
+    .sort((a, b) => a.moves - b.moves || a.name.localeCompare(b.name))
+    .slice(0, limit);
 }
 
 export function loadHighscores(storage = typeof window !== "undefined" ? window.localStorage : null) {
@@ -95,7 +123,11 @@ export function loadHighscores(storage = typeof window !== "undefined" ? window.
 
   try {
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed.map(normalizeScoreEntry).filter(Boolean);
   } catch {
     return [];
   }

@@ -11,6 +11,7 @@ import {
 } from "./game.js";
 
 const size = 4;
+const defaultPlayerName = "Anonymous";
 
 export default function App() {
   const [game, setGame] = React.useState(() => ({
@@ -24,10 +25,25 @@ export default function App() {
   const celebrate = solved && game.moves > 0 && !isShuffling;
   const previousSolved = React.useRef(solved);
 
+  function getPlayerName() {
+    if (typeof window === "undefined" || typeof window.prompt !== "function") {
+      return defaultPlayerName;
+    }
+
+    try {
+      const input = window.prompt("You solved it! Enter your name for highscores:", "");
+      const trimmed = typeof input === "string" ? input.trim() : "";
+      return trimmed || defaultPlayerName;
+    } catch {
+      return defaultPlayerName;
+    }
+  }
+
   React.useEffect(() => {
     if (solved && !previousSolved.current && game.moves > 0) {
+      const name = getPlayerName();
       setHighscores((prev) => {
-        const updated = updateHighscores(prev, game.moves, 5);
+        const updated = updateHighscores(prev, game.moves, name, 5);
         saveHighscores(updated);
         return updated;
       });
@@ -139,9 +155,10 @@ export default function App() {
         <ol className="highscores__list">
           {highscores.length > 0 ? (
             highscores.map((score, index) => (
-              <li key={`score-${score}-${index}`}>
+              <li key={`score-${score.name}-${score.moves}-${index}`}>
                 <span className="rank">#{index + 1}</span>
-                <span className="score">{score} moves</span>
+                <span className="player">{score.name}</span>
+                <span className="score">{score.moves} moves</span>
               </li>
             ))
           ) : (

@@ -195,8 +195,8 @@ h1 {
 
 .highscores__list li {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 10px;
   background: #fffaf2;
   border-radius: 12px;
   padding: 10px 12px;
@@ -210,6 +210,10 @@ h1 {
 
 .rank {
   font-weight: 600;
+}
+
+.player {
+  flex: 1;
 }
 
 .score {

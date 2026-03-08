@@ -1,10 +1,20 @@
 import React from "react";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App.jsx";
 
 describe("App fireworks", () => {
+  const originalPrompt = window.prompt;
+
+  beforeEach(() => {
+    window.localStorage.clear();
+    window.prompt = vi.fn(() => "Player");
+  });
+
   afterEach(() => cleanup());
+  afterEach(() => {
+    window.prompt = originalPrompt;
+  });
 
   it("does not show fireworks on initial load", () => {
     render(<App />);
@@ -17,6 +27,7 @@ describe("App fireworks", () => {
     fireEvent.click(tile);
     fireEvent.click(tile);
     expect(screen.getByTestId("fireworks")).toBeInTheDocument();
+    expect(screen.getByText("Player")).toBeInTheDocument();
   });
 
   it("renders slide instructions", () => {

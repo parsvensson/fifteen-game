@@ -106,16 +106,42 @@ describe("isSolved", () => {
 
 describe("highscores", () => {
   it("updates high scores in ascending order", () => {
-    const updated = updateHighscores([50, 40], 45, 5);
-    expect(updated).toEqual([40, 45, 50]);
+    const updated = updateHighscores(
+      [{ name: "A", moves: 50 }, { name: "B", moves: 40 }],
+      45,
+      "C",
+      5
+    );
+    expect(updated).toEqual([
+      { name: "B", moves: 40 },
+      { name: "C", moves: 45 },
+      { name: "A", moves: 50 },
+    ]);
   });
 
   it("limits high scores to the configured size", () => {
-    const updated = updateHighscores([10, 11, 12, 13, 14], 9, 5);
-    expect(updated).toEqual([9, 10, 11, 12, 13]);
+    const updated = updateHighscores(
+      [
+        { name: "A", moves: 10 },
+        { name: "B", moves: 11 },
+        { name: "C", moves: 12 },
+        { name: "D", moves: 13 },
+        { name: "E", moves: 14 },
+      ],
+      9,
+      "F",
+      5
+    );
+    expect(updated).toEqual([
+      { name: "F", moves: 9 },
+      { name: "A", moves: 10 },
+      { name: "B", moves: 11 },
+      { name: "C", moves: 12 },
+      { name: "D", moves: 13 },
+    ]);
   });
 
-  it("loads and saves scores using storage", () => {
+  it("loads and saves named scores using storage", () => {
     const storage = (() => {
       let data = {};
       return {
@@ -126,7 +152,28 @@ describe("highscores", () => {
       };
     })();
 
-    saveHighscores([3, 7], storage);
-    expect(loadHighscores(storage)).toEqual([3, 7]);
+    saveHighscores(
+      [
+        { name: "Lin", moves: 3 },
+        { name: "Max", moves: 7 },
+      ],
+      storage
+    );
+    expect(loadHighscores(storage)).toEqual([
+      { name: "Lin", moves: 3 },
+      { name: "Max", moves: 7 },
+    ]);
+  });
+
+  it("normalizes legacy numeric scores from storage", () => {
+    const storage = {
+      getItem: () => JSON.stringify([4, 6]),
+      setItem: () => {},
+    };
+
+    expect(loadHighscores(storage)).toEqual([
+      { name: "Anonymous", moves: 4 },
+      { name: "Anonymous", moves: 6 },
+    ]);
   });
 });
